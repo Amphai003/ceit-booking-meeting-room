@@ -1,13 +1,12 @@
-
-import './App.css';
+import Timestamp from './components/Timestamp';
 
 function App() {
   return (
-    <div className="bg-blue-500 text-white p-4">
-      Tailwind CSS is working!
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+      <Timestamp />
     </div>
   );
-
 }
 
 export default App;
+
