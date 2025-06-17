@@ -1,12 +1,13 @@
-import Timestamp from './components/Timestamp';
+import React from "react";
 
-function App() {
+import InputPassword from "./components/InputPassword";
+
+const App = () => {
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-      <Timestamp />
+    <div className="p-6 max-w-md mx-auto">
+      <InputPassword />
     </div>
   );
-}
+};
 
 export default App;
-
