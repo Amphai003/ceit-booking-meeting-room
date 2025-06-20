@@ -1,45 +1,99 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-
 import { Eye, EyeOff } from 'lucide-react';
+import Swal from 'sweetalert2';
+import api from '../api'; 
 
 const Login = () => {
   const [email, setEmail] = useState('');
-  const navigate = useNavigate();
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
 
-const handleSubmit = (e) => {
+
+ const handleSubmit = async (e) => {
   e.preventDefault();
+  setIsLoading(true);
 
-  // Simulated authentication response (replace with actual API call)
-  const mockUser = {
-    email,
-    role: email === 'admin@example.com' ? 'admin' : 'user',
-  };
+  try {
+    // Validate inputs
+    if (!email || !password) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Oops...',
+        text: 'Please fill in all fields!',
+      });
+      setIsLoading(false);
+      return;
+    }
 
-  // ✅ Save role/token to localStorage (or sessionStorage)
-  localStorage.setItem('role', mockUser.role);
-  localStorage.setItem('loggedIn', 'true');
+    // ✅ Make API call using axios with interceptor (api.js)
+    const result = await api.post('/auth/login', { email, password });
 
-  console.log('Login attempt:', mockUser);
+    // ✅ Validate response (no .data here because interceptor already returned response.data)
+    if (!result || !result.token || !result.user || !result.user.role) {
+      throw new Error('Invalid login response from server');
+    }
 
-  // Navigate based on role
-  if (mockUser.role === 'admin') {
-    navigate('/admin-dashboard');
-  } else {
-    navigate('/user-home');
+    const { token, user } = result;
+    const role = user.role;
+
+    // Store token + user info
+    localStorage.setItem('token', token);
+    localStorage.setItem('role', role);
+    localStorage.setItem('user', JSON.stringify(user));
+    localStorage.setItem('loggedIn', 'true');
+
+    await Swal.fire({
+      icon: 'success',
+      title: 'Login Successful!',
+      showConfirmButton: false,
+      timer: 1500
+    });
+
+    // Redirect by role
+    if (role === 'admin') {
+      navigate('/admin-dashboard');
+    } else {
+      navigate('/user-home');
+    }
+
+  } catch (error) {
+    console.error('Login error:', error);
+
+    let errorMessage = 'Login failed. Please try again.';
+    if (error?.message) {
+      errorMessage = error.message;
+    }
+
+    Swal.fire({
+      icon: 'error',
+      title: 'Login Failed',
+      text: errorMessage,
+    });
+  } finally {
+    setIsLoading(false);
   }
 };
 
 
-
   const handleGoogleSignIn = () => {
     console.log('Google sign in clicked');
+    Swal.fire({
+      title: 'Coming Soon!',
+      text: 'Google sign in will be available soon.',
+      icon: 'info'
+    });
   };
 
   const handleFacebookSignIn = () => {
     console.log('Facebook sign in clicked');
+    Swal.fire({
+      title: 'Coming Soon!',
+      text: 'Facebook sign in will be available soon.',
+      icon: 'info'
+    });
   };
 
   return (
@@ -50,7 +104,6 @@ const handleSubmit = (e) => {
           <div className="text-center mb-6 sm:mb-8">
             <div className="flex justify-center mb-4 sm:mb-6">
               <img src="/src/assets/ceit-logo.png" alt="Meeting Room Booking" className="h-12 sm:h-16 lg:h-20 w-auto" />
-
             </div>
             <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 tracking-wide">
               Meeting Room  BOOKING
@@ -120,9 +173,20 @@ const handleSubmit = (e) => {
               {/* Sign In Button */}
               <button
                 onClick={handleSubmit}
-                className="w-full bg-gradient-to-r from-gray-800 to-gray-900 hover:from-gray-900 hover:to-black text-white py-2.5 sm:py-3 lg:py-4 rounded-lg sm:rounded-xl font-medium text-sm sm:text-base transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                disabled={isLoading}
+                className="w-full bg-gradient-to-r from-gray-800 to-gray-900 hover:from-gray-900 hover:to-black text-white py-2.5 sm:py-3 lg:py-4 rounded-lg sm:rounded-xl font-medium text-sm sm:text-base transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed"
               >
-                Sign In
+                {isLoading ? (
+                  <span className="flex items-center justify-center">
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Signing In...
+                  </span>
+                ) : (
+                  'Sign In'
+                )}
               </button>
             </div>
 
