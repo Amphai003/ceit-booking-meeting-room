@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import Swal from 'sweetalert2';
 import api from '../api'; 
+import { useAuth } from '../Auth/authContext';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -10,6 +11,7 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const { login } = useAuth();
 
 
  const handleSubmit = async (e) => {
@@ -31,26 +33,28 @@ const Login = () => {
     // ✅ Make API call using axios with interceptor (api.js)
     const result = await api.post('/auth/login', { email, password });
 
-    // ✅ Validate response (no .data here because interceptor already returned response.data)
-    if (!result || !result.token || !result.user || !result.user.role) {
-      throw new Error('Invalid login response from server');
-    }
+      if (!result || !result.token || !result.user || !result.user.role) {
+        throw new Error('Invalid login response from server');
+      }
 
-    const { token, user } = result;
-    const role = user.role;
+      const { token, user } = result;
+      const role = user.role;
 
-    // Store token + user info
-    localStorage.setItem('token', token);
-    localStorage.setItem('role', role);
-    localStorage.setItem('user', JSON.stringify(user));
-    localStorage.setItem('loggedIn', 'true');
+      // Store user data
+      localStorage.setItem('token', token);
+      localStorage.setItem('role', role);
+      localStorage.setItem('user', JSON.stringify(user));
+      localStorage.setItem('loggedIn', 'true');
 
-    await Swal.fire({
-      icon: 'success',
-      title: 'Login Successful!',
-      showConfirmButton: false,
-      timer: 1500
-    });
+      // Update auth state
+      login(); // Call the login function from context
+
+      await Swal.fire({
+        icon: 'success',
+        title: 'Login Successful!',
+        showConfirmButton: false,
+        timer: 1500
+      });
 
     // Redirect by role
     if (role === 'admin') {
