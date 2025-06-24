@@ -31,9 +31,11 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<SignUp />} />
 
-
         {/* USER */}
        <Route path="/user-home" element={isLoggedIn ? <UserHomeScreen /> : <Navigate to="/login" />} />
+
+       {/* ADMIN */}
+        <Route path="/admin-dashboard" element={isLoggedIn ? <div>Admin Dashboard</div> : <Navigate to="/login" />} />
 
         {/* Redirect all other paths to login */}
         <Route path="*" element={<Navigate to="/login" replace />} />
