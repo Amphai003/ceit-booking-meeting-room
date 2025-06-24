@@ -8,7 +8,7 @@ import {
   Bell,
   User
 } from 'lucide-react';
-import UserNavbar from './userNavbar';
+
 
 const UserHomeScreen = () => {
   const [activeTab, setActiveTab] = useState('All room');
@@ -111,7 +111,7 @@ const UserHomeScreen = () => {
           </div>
         </div>
       </div>
-          <UserNavbar activeTab="Home" />
+          
       
     </div>
   );
