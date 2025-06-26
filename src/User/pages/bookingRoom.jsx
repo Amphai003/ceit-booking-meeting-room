@@ -1,74 +1,11 @@
-import React, { useState } from 'react';
-import { MapPin, Wifi, Car, Coffee, Utensils, Users, Monitor, Projector, Clock, CheckCircle, XCircle, AlertCircle, Calendar } from 'lucide-react';
-
-// Mock data for bookings
-const mockBookings = [
-  {
-    id: 1,
-    roomName: "iOURi Room",
-    location: "Floor 45",
-    date: "2025-06-22",
-    time: "09:00 - 11:00",
-    duration: "2 hours",
-    capacity: 12,
-    status: "confirmed",
-    bookingId: "BK001",
-    amenities: ['wifi', 'projector', 'coffee'],
-    participants: 8
-  },
-  {
-    id: 2,
-    roomName: "Executive Conference Room",
-    location: "Floor 32",
-    date: "2025-06-25",
-    time: "14:00 - 16:30",
-    duration: "2.5 hours",
-    capacity: 20,
-    status: "pending",
-    bookingId: "BK002",
-    amenities: ['wifi', 'projector', 'monitor'],
-    participants: 15
-  },
-  {
-    id: 3,
-    roomName: "Creative Meeting Studio",
-    location: "Floor 12",
-    date: "2025-06-20",
-    time: "10:00 - 12:00",
-    duration: "2 hours",
-    capacity: 8,
-    status: "completed",
-    bookingId: "BK003",
-    amenities: ['wifi', 'monitor'],
-    participants: 6
-  },
-  {
-    id: 4,
-    roomName: "Boardroom Elite",
-    location: "Floor 28",
-    date: "2025-06-18",
-    time: "13:00 - 17:00",
-    duration: "4 hours",
-    capacity: 16,
-    status: "completed",
-    bookingId: "BK004",
-    amenities: ['wifi', 'projector', 'monitor', 'coffee'],
-    participants: 12
-  },
-  {
-    id: 5,
-    roomName: "Innovation Hub",
-    location: "Floor 15",
-    date: "2025-06-15",
-    time: "09:30 - 11:30",
-    duration: "2 hours",
-    capacity: 10,
-    status: "cancelled",
-    bookingId: "BK005",
-    amenities: ['wifi', 'projector'],
-    participants: 7
-  }
-];
+import React, { useEffect, useState } from 'react';
+import api from '../../api';
+import Swal from 'sweetalert2';
+import {
+  MapPin, Wifi, Car, Coffee, Utensils, Users,
+  Monitor, Projector, Clock, CheckCircle,
+  XCircle, AlertCircle, Calendar, Edit, Play, CheckSquare
+} from 'lucide-react';
 
 const AmenityIcon = ({ type }) => {
   const icons = {
@@ -79,7 +16,6 @@ const AmenityIcon = ({ type }) => {
     projector: Projector,
     monitor: Monitor
   };
-  
   const Icon = icons[type];
   return Icon ? <Icon className="w-4 h-4 text-gray-600" /> : null;
 };
@@ -87,38 +23,33 @@ const AmenityIcon = ({ type }) => {
 const StatusBadge = ({ status }) => {
   const statusConfig = {
     confirmed: {
-      icon: CheckCircle,
-      color: 'text-green-600',
-      bg: 'bg-green-50',
-      border: 'border-green-200',
-      text: 'Confirmed'
+      icon: CheckCircle, color: 'text-green-600',
+      bg: 'bg-green-50', border: 'border-green-200', text: 'Confirmed'
+    },
+    approved: {
+      icon: CheckCircle, color: 'text-green-600',
+      bg: 'bg-green-50', border: 'border-green-200', text: 'Approved'
     },
     pending: {
-      icon: AlertCircle,
-      color: 'text-yellow-600',
-      bg: 'bg-yellow-50',
-      border: 'border-yellow-200',
-      text: 'Pending'
+      icon: AlertCircle, color: 'text-yellow-600',
+      bg: 'bg-yellow-50', border: 'border-yellow-200', text: 'Pending'
     },
     completed: {
-      icon: CheckCircle,
-      color: 'text-blue-600',
-      bg: 'bg-blue-50',
-      border: 'border-blue-200',
-      text: 'Completed'
+      icon: CheckCircle, color: 'text-blue-600',
+      bg: 'bg-blue-50', border: 'border-blue-200', text: 'Completed'
     },
     cancelled: {
-      icon: XCircle,
-      color: 'text-red-600',
-      bg: 'bg-red-50',
-      border: 'border-red-200',
-      text: 'Cancelled'
+      icon: XCircle, color: 'text-red-600',
+      bg: 'bg-red-50', border: 'border-red-200', text: 'Cancelled'
+    },
+    rejected: {
+      icon: XCircle, color: 'text-red-600',
+      bg: 'bg-red-50', border: 'border-red-200', text: 'Rejected'
     }
   };
-
   const config = statusConfig[status];
+  if (!config) return null;
   const Icon = config.icon;
-
   return (
     <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${config.color} ${config.bg} ${config.border} border`}>
       <Icon className="w-3 h-3 mr-1" />
@@ -127,91 +58,241 @@ const StatusBadge = ({ status }) => {
   );
 };
 
-const BookingCard = ({ booking, onManage, onCancel }) => {
+const AvailabilityBadge = ({ booking }) => {
+  const getCurrentAvailability = (booking) => {
+    const now = new Date();
+    const bookingDate = new Date(booking.bookingDate);
+    const today = new Date();
+    
+    // Check if booking is today
+    const isToday = bookingDate.toDateString() === today.toDateString();
+    
+    if (!isToday || (booking.status !== 'approved' && booking.status !== 'confirmed')) {
+      return null; // Don't show availability for non-today or non-active bookings
+    }
+
+    // Parse booking times
+    const [startHours, startMinutes] = booking.startTime.split(':').map(Number);
+    const [endHours, endMinutes] = booking.endTime.split(':').map(Number);
+    
+    const startTime = new Date(today);
+    startTime.setHours(startHours, startMinutes, 0, 0);
+    
+    const endTime = new Date(today);
+    endTime.setHours(endHours, endMinutes, 0, 0);
+    
+    const currentTime = now.getTime();
+    const startTimeMs = startTime.getTime();
+    const endTimeMs = endTime.getTime();
+    
+    if (currentTime >= startTimeMs && currentTime <= endTimeMs) {
+      // Meeting is currently in progress
+      const remainingMs = endTimeMs - currentTime;
+      const remainingMinutes = Math.ceil(remainingMs / (1000 * 60));
+      
+      return {
+        status: 'in-progress',
+        text: `Meeting in progress • ${remainingMinutes}m left`,
+        icon: Play,
+        color: 'text-red-600',
+        bg: 'bg-red-50',
+        border: 'border-red-200'
+      };
+    } else if (currentTime < startTimeMs) {
+      // Meeting hasn't started yet
+      const timeToStart = startTimeMs - currentTime;
+      const minutesToStart = Math.ceil(timeToStart / (1000 * 60));
+      
+      if (minutesToStart <= 15) {
+        return {
+          status: 'starting-soon',
+          text: `Starting in ${minutesToStart}m`,
+          icon: Clock,
+          color: 'text-yellow-600',
+          bg: 'bg-yellow-50',
+          border: 'border-yellow-200'
+        };
+      }
+    } else {
+      // Meeting has finished
+      return {
+        status: 'ready',
+        text: 'Room is ready to book',
+        icon: CheckSquare,
+        color: 'text-green-600',
+        bg: 'bg-green-50',
+        border: 'border-green-200'
+      };
+    }
+    
+    return null;
+  };
+
+  const availability = getCurrentAvailability(booking);
+  
+  if (!availability) return null;
+  
+  const Icon = availability.icon;
+  
+  return (
+    <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${availability.color} ${availability.bg} ${availability.border} border ml-2`}>
+      <Icon className="w-3 h-3 mr-1" />
+      {availability.text}
+    </div>
+  );
+};
+
+const BookingCard = ({ booking, onManage, onCancel, onEdit }) => {
   const formatDate = (dateString) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      weekday: 'short', 
-      month: 'short', 
-      day: 'numeric',
-      year: 'numeric'
+    return date.toLocaleDateString('en-US', {
+      weekday: 'short', month: 'short', day: 'numeric', year: 'numeric'
     });
   };
 
-  const isUpcoming = booking.status === 'confirmed' || booking.status === 'pending';
-  const canCancel = booking.status === 'confirmed' || booking.status === 'pending';
+  const formatTimeRange = (dateString, startTime, endTime) => {
+    const date = new Date(dateString);
+    const [startHours, startMinutes] = startTime.split(':');
+    const [endHours, endMinutes] = endTime.split(':');
+    
+    date.setHours(startHours, startMinutes);
+    const start = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    
+    date.setHours(endHours, endMinutes);
+    const end = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    
+    return `${start} - ${end}`;
+  };
+
+  const calculateDuration = (startTime, endTime) => {
+    const [startHours, startMinutes] = startTime.split(':').map(Number);
+    const [endHours, endMinutes] = endTime.split(':').map(Number);
+    
+    let hours = endHours - startHours;
+    let minutes = endMinutes - startMinutes;
+    
+    if (minutes < 0) {
+      hours -= 1;
+      minutes += 60;
+    }
+    
+    if (hours === 0) {
+      return `${minutes} ${minutes === 1 ? 'minute' : 'minutes'}`;
+    } else if (minutes === 0) {
+      return `${hours} ${hours === 1 ? 'hour' : 'hours'}`;
+    } else {
+      return `${hours} ${hours === 1 ? 'hour' : 'hours'} ${minutes} minutes`;
+    }
+  };
+
+  const isToday = () => {
+    const today = new Date();
+    const bookingDate = new Date(booking.bookingDate);
+    return bookingDate.toDateString() === today.toDateString();
+  };
+
+  const canCancel = booking.status === 'confirmed' || booking.status === 'pending' || booking.status === 'approved';
+  const canEdit = booking.status === 'confirmed' || booking.status === 'pending' || booking.status === 'approved';
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-4">
       <div className="relative">
-        <div className="aspect-video bg-gradient-to-br from-blue-400 via-blue-500 to-blue-700 relative overflow-hidden">
-          {/* Simulated room image */}
-          <div className="absolute inset-0 bg-gradient-to-t from-blue-900/20 to-transparent"></div>
-          <div className="absolute bottom-4 left-4 right-4">
-            <div className="flex space-x-2">
-              {[...Array(6)].map((_, i) => (
-                <div key={i} className="w-16 h-24 bg-white/10 backdrop-blur-sm rounded border border-white/20"></div>
-              ))}
-            </div>
+        {booking.roomId?.photos?.length > 0 ? (
+          <div className="aspect-video bg-gray-100 relative overflow-hidden">
+            <img 
+              src={booking.roomId.photos[0]} 
+              alt={booking.roomId.name} 
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
           </div>
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-8 h-12 bg-black/30 rounded-full"></div>
+        ) : (
+          <div className="aspect-video bg-gradient-to-br from-blue-400 via-blue-500 to-blue-700 relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-t from-blue-900/20 to-transparent"></div>
           </div>
-        </div>
-        
-        <div className="absolute top-3 right-3">
+        )}
+        <div className="absolute top-3 right-3 flex items-center">
           <StatusBadge status={booking.status} />
+          {isToday() && <AvailabilityBadge booking={booking} />}
         </div>
       </div>
-      
+
       <div className="p-4">
         <div className="flex items-start justify-between mb-2">
-          <h3 className="font-semibold text-lg text-gray-900">{booking.roomName}</h3>
-          <span className="text-sm text-gray-500">#{booking.bookingId}</span>
+          <h3 className="font-semibold text-lg text-gray-900">
+            {booking.roomId?.name || 'Meeting Room'}
+          </h3>
+          <span className="text-sm text-gray-500">#{booking._id.slice(-6).toUpperCase()}</span>
         </div>
-        
-        <div className="flex items-center text-gray-600 text-sm mb-2">
-          <MapPin className="w-4 h-4 mr-1" />
-          <span>{booking.location}</span>
-        </div>
-        
+
+        {booking.roomId?.location && (
+          <div className="flex items-center text-gray-600 text-sm mb-2">
+            <MapPin className="w-4 h-4 mr-1" />
+            {booking.roomId.location}
+          </div>
+        )}
+
         <div className="flex items-center text-gray-600 text-sm mb-2">
           <Calendar className="w-4 h-4 mr-1" />
-          <span>{formatDate(booking.date)}</span>
+          {formatDate(booking.bookingDate)}
+          {isToday() && <span className="ml-2 text-blue-600 font-medium">(Today)</span>}
         </div>
-        
+
         <div className="flex items-center text-gray-600 text-sm mb-2">
           <Clock className="w-4 h-4 mr-1" />
-          <span>{booking.time} ({booking.duration})</span>
+          {formatTimeRange(booking.bookingDate, booking.startTime, booking.endTime)} 
+          ({calculateDuration(booking.startTime, booking.endTime)})
         </div>
-        
+
         <div className="flex items-center text-gray-600 text-sm mb-3">
           <Users className="w-4 h-4 mr-1" />
-          <span>{booking.participants} people (Capacity: {booking.capacity})</span>
+          {booking.attendees || 1} people (Capacity: {booking.roomId?.capacity || 'N/A'})
         </div>
-        
-        <div className="flex items-center space-x-3 mb-4">
-          {booking.amenities.map((amenity, index) => (
-            <AmenityIcon key={index} type={amenity} />
-          ))}
-        </div>
-        
+
+        {booking.purpose && (
+          <div className="mb-3">
+            <p className="text-sm text-gray-600">
+              <span className="font-medium">Purpose:</span> {booking.purpose}
+            </p>
+          </div>
+        )}
+
+        {booking.roomId?.amenities && (
+          <div className="flex items-center space-x-3 mb-4">
+            {booking.roomId.amenities.map((amenity, index) => (
+              <AmenityIcon key={index} type={amenity} />
+            ))}
+          </div>
+        )}
+
         <div className="flex justify-between items-center">
           <button
             onClick={() => onManage(booking)}
-            className="bg-gray-100 text-gray-700 px-4 py-2 rounded-full text-sm font-medium hover:bg-gray-200 transition-colors"
+            className="bg-gray-100 text-gray-700 px-4 py-2 rounded-full text-sm font-medium hover:bg-gray-200"
           >
             View Details
           </button>
-          
-          {canCancel && (
-            <button
-              onClick={() => onCancel(booking)}
-              className="bg-red-500 text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-red-600 transition-colors"
-            >
-              Cancel Booking
-            </button>
-          )}
+
+          <div className="flex space-x-2">
+            {canEdit && (
+              <button
+                onClick={() => onEdit(booking)}
+                className="bg-blue-500 text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-blue-600 flex items-center"
+              >
+                <Edit className="w-4 h-4 mr-1" />
+                Edit
+              </button>
+            )}
+            
+            {canCancel && (
+              <button
+                onClick={() => onCancel(booking)}
+                className="bg-red-500 text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-red-600"
+              >
+                Cancel
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -219,103 +300,179 @@ const BookingCard = ({ booking, onManage, onCancel }) => {
 };
 
 const BookingScreen = () => {
-  const [activeFilter, setActiveFilter] = useState('all');
+  const [bookings, setBookings] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeFilter, setActiveFilter] = useState('all');
+
+  useEffect(() => {
+    const fetchBookings = async () => {
+      try {
+        const response = await api.get('/bookings/me');
+        setBookings(response.data.data);
+      } catch (error) {
+        console.error('Error fetching bookings:', error);
+        Swal.fire('Error', 'Failed to load bookings', 'error');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBookings();
+    
+    // Update availability status every minute
+    const interval = setInterval(fetchBookings, 60000);
+    
+    return () => clearInterval(interval);
+  }, []);
 
   const handleManage = (booking) => {
-    alert(`Managing booking: ${booking.bookingId} for ${booking.roomName}`);
+    Swal.fire({
+      title: 'Booking Details',
+      html: `
+        <div class="text-left">
+          <p><strong>Room:</strong> ${booking.roomId?.name || 'N/A'}</p>
+          <p><strong>Date:</strong> ${new Date(booking.bookingDate).toLocaleDateString()}</p>
+          <p><strong>Time:</strong> ${booking.startTime} - ${booking.endTime}</p>
+          <p><strong>Status:</strong> ${booking.status}</p>
+          <p><strong>Purpose:</strong> ${booking.purpose || 'Not specified'}</p>
+          ${booking.requestedEquipment?.length ? `
+            <p><strong>Equipment:</strong></p>
+            <ul>
+              ${booking.requestedEquipment.map(item => 
+                `<li>${item.name} (${item.quantity})</li>`
+              ).join('')}
+            </ul>
+          ` : ''}
+          ${booking.notes ? `<p><strong>Notes:</strong> ${booking.notes}</p>` : ''}
+        </div>
+      `,
+      confirmButtonText: 'Close'
+    });
   };
 
-  const handleCancel = (booking) => {
-    if (window.confirm(`Are you sure you want to cancel booking ${booking.bookingId}?`)) {
-      alert(`Booking ${booking.bookingId} cancelled successfully`);
+  const handleEdit = (booking) => {
+    // You'll need to implement your edit form or navigation here
+    // For example, navigate to an edit page:
+    // navigate(`/bookings/edit/${booking._id}`);
+    
+    Swal.fire({
+      title: 'Edit Booking',
+      text: 'Edit functionality would open a form to modify this booking',
+      icon: 'info',
+      confirmButtonText: 'OK'
+    });
+  };
+
+  const handleCancel = async (booking) => {
+    const result = await Swal.fire({
+      title: `Cancel Booking #${booking._id.slice(-6).toUpperCase()}?`,
+      text: "This action cannot be undone.",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#aaa',
+      confirmButtonText: 'Yes, cancel it!'
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await api.delete(`/bookings/${booking._id}`);
+        
+        setBookings(prev => prev.map(b =>
+          b._id === booking._id ? { ...b, status: 'cancelled' } : b
+        ));
+        
+        Swal.fire('Cancelled!', 'Your booking has been cancelled.', 'success');
+      } catch (err) {
+        Swal.fire('Error', 'Failed to cancel booking.', 'error');
+      }
     }
   };
 
-  const filteredBookings = mockBookings.filter(booking => {
-    const matchesSearch = booking.roomName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         booking.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         booking.bookingId.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    if (activeFilter === 'all') return matchesSearch;
-    if (activeFilter === 'upcoming') return matchesSearch && (booking.status === 'confirmed' || booking.status === 'pending');
-    if (activeFilter === 'history') return matchesSearch && (booking.status === 'completed' || booking.status === 'cancelled');
-    
-    return matchesSearch;
+  const filteredBookings = bookings.filter(booking => {
+    const searchMatch =
+      (booking.roomId?.name?.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (booking.roomId?.location?.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (booking._id.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (booking.purpose?.toLowerCase().includes(searchQuery.toLowerCase()));
+
+    const status = booking.status;
+
+    if (activeFilter === 'all') return searchMatch;
+    if (activeFilter === 'upcoming') return searchMatch && (status === 'confirmed' || status === 'pending' || status === 'approved');
+    if (activeFilter === 'history') return searchMatch && (status === 'completed' || status === 'cancelled' || status === 'rejected');
+    return false;
   });
 
-  const filterButtons = [
-    { key: 'all', label: 'All Bookings', count: mockBookings.length },
-    { key: 'upcoming', label: 'Upcoming', count: mockBookings.filter(b => b.status === 'confirmed' || b.status === 'pending').length },
-    { key: 'history', label: 'History', count: mockBookings.filter(b => b.status === 'completed' || b.status === 'cancelled').length }
+  const filterTabs = [
+    { key: 'all', label: 'All Bookings' },
+    { key: 'upcoming', label: 'Upcoming' },
+    { key: 'history', label: 'History' }
   ];
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-gray-500 text-lg">
+        Loading bookings...
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
       <div className="bg-white border-b border-gray-100 sticky top-0 z-40">
-        <div className="px-4 py-4">
-          <h1 className="text-2xl font-bold text-gray-900 text-center">Bookings</h1>
+        <div className="px-4 py-4 text-center">
+          <h1 className="text-2xl font-bold text-gray-900">My Bookings</h1>
         </div>
       </div>
 
-      {/* Filter Tabs */}
+      <div className="bg-white px-4 py-3 border-b border-gray-100 flex space-x-2 overflow-x-auto">
+        {filterTabs.map(tab => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveFilter(tab.key)}
+            className={`px-4 py-2 rounded-full text-sm font-medium ${
+              activeFilter === tab.key ? 'bg-black text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
       <div className="bg-white px-4 py-3 border-b border-gray-100">
-        <div className="flex space-x-2 overflow-x-auto">
-          {filterButtons.map(({ key, label, count }) => (
-            <button
-              key={key}
-              onClick={() => setActiveFilter(key)}
-              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-                activeFilter === key
-                  ? 'bg-black text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              {label} ({count})
-            </button>
-          ))}
-        </div>
+        <input
+          type="text"
+          placeholder="Search bookings by room, location, or ID..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full px-4 py-3 bg-gray-50 rounded-full text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500"
+        />
       </div>
 
-      {/* Search Bar */}
-      <div className="bg-white px-4 py-3 border-b border-gray-100">
-        <div className="relative">
-          <input
-            type="text"
-            placeholder="Search bookings..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full px-4 py-3 bg-gray-50 rounded-full text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-colors"
-          />
-        </div>
-      </div>
-
-      {/* Content */}
       <div className="px-4 py-4">
         {filteredBookings.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16">
-            <Calendar className="w-16 h-16 text-gray-300 mb-4" />
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">No Bookings Found</h3>
-            <p className="text-gray-600 text-center">
-              {searchQuery ? 'No bookings match your search.' : 'You haven\'t made any bookings yet.'}
-            </p>
+          <div className="flex flex-col items-center justify-center py-16 text-gray-500">
+            <Calendar className="w-16 h-16 mb-4" />
+            <h3 className="text-xl font-semibold">No Bookings Found</h3>
+            <p>{searchQuery ? 'Try a different search term.' : 'You have no bookings yet.'}</p>
           </div>
         ) : (
-          <div className="space-y-4">
-            <p className="text-gray-600 text-sm">
-              {filteredBookings.length} booking{filteredBookings.length !== 1 ? 's' : ''} found
+          <>
+            <p className="text-sm text-gray-600 mb-2">
+              Showing {filteredBookings.length} booking{filteredBookings.length !== 1 ? 's' : ''}
             </p>
-            
             {filteredBookings.map(booking => (
               <BookingCard
-                key={booking.id}
+                key={booking._id}
                 booking={booking}
                 onManage={handleManage}
                 onCancel={handleCancel}
+                onEdit={handleEdit}
               />
             ))}
-          </div>
+          </>
         )}
       </div>
     </div>

@@ -1,6 +1,10 @@
 import { Users, MapPin, Edit } from 'lucide-react';
 
-const RoomCard = ({ room, getStatusColor, getStatusIcon }) => {
+const RoomCard = ({ room, getStatusColor, getStatusIcon, navigate }) => {
+  const handleViewDetails = () => {
+    navigate(`/rooms/${room.id}`);
+  };
+
   return (
     <div className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between mb-3">
@@ -44,7 +48,10 @@ const RoomCard = ({ room, getStatusColor, getStatusIcon }) => {
       </div>
       
       <div className="flex gap-2 mt-4">
-        <button className="flex-1 px-3 py-2 bg-blue-50 text-blue-600 rounded hover:bg-blue-100 transition-colors">
+        <button 
+          onClick={handleViewDetails}
+          className="flex-1 px-3 py-2 bg-blue-50 text-blue-600 rounded hover:bg-blue-100 transition-colors"
+        >
           View Details
         </button>
         <button className="px-3 py-2 bg-gray-50 text-gray-600 rounded hover:bg-gray-100 transition-colors">
