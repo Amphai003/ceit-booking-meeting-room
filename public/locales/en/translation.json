@@ -1,0 +1,22 @@
+{
+  "login_title": "Login to your Account",
+  "login_subtitle": "Welcome back! Please enter your details.",
+  "email_placeholder": "Email or Phone number",
+  "password_placeholder": "Password",
+  "forgot_password": "Forgot Password?",
+  "sign_in": "Sign In",
+  "signing_in": "Signing In...",
+  "or_continue": "Or continue with",
+  "google": "Google",
+  "facebook": "Facebook",
+  "no_account": "Don't have an account?",
+  "sign_up": "Sign Up",
+  "login_success": "Login Successful!",
+  "login_failed": "Login Failed",
+  "fill_fields": "Please fill in all fields!",
+  "login_failed_msg": "Login failed. Please try again.",
+  "coming_soon": "Coming Soon!",
+  "google_soon": "Google sign in will be available soon.",
+  "facebook_soon": "Facebook sign in will be available soon.",
+  "meeting_booking": "Meeting Room BOOKING"
+}

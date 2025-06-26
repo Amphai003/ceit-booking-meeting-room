@@ -1,0 +1,22 @@
+{
+  "login_title": "ເຂົ້າລະບົບບັນຊີຂອງທ່ານ",
+  "login_subtitle": "ຍິນດີຕ້ອນຮັບກັບຄືນ! ກະລຸນາປ້ອນລາຍລະອຽດ.",
+  "email_placeholder": "ອີເມວ ຫຼື ເບີໂທ",
+  "password_placeholder": "ລະຫັດຜ່ານ",
+  "forgot_password": "ລືມລະຫັດຜ່ານ?",
+  "sign_in": "ເຂົ້າລະບົບ",
+  "signing_in": "ກຳລັງເຂົ້າ...",
+  "or_continue": "ຫຼື ດຳເນີນຕໍ່ດ້ວຍ",
+  "google": "Google",
+  "facebook": "Facebook",
+  "no_account": "ຍັງບໍ່ມີບັນຊີ?",
+  "sign_up": "ລົງທະບຽນ",
+  "login_success": "ເຂົ້າລະບົບສຳເລັດ!",
+  "login_failed": "ເຂົ້າລະບົບບໍ່ສຳເລັດ",
+  "fill_fields": "ກະລຸນາປ້ອນຂໍ້ມູນທັງໝົດ!",
+  "login_failed_msg": "ເຂົ້າລະບົບລົ້ມເຫຼວ. ກະລຸນາລອງໃໝ່.",
+  "coming_soon": "ໃກ້ຈະມາເຖິງ!",
+  "google_soon": "ຈະມີ Google ໃນໄວໆນີ້.",
+  "facebook_soon": "ຈະມີ Facebook ໃນໄວໆນີ້.",
+  "meeting_booking": "ຈອງຫ້ອງປະຊຸມ"
+}
