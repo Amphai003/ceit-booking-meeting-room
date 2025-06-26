@@ -12,6 +12,10 @@ import ProfileScreen from './User/pages/profile';
 import MeetingRoomDashboard from './Admin/pages/admiDashboard';
 import { AuthProvider, useAuth } from '../src/Auth/authContext';
 import UserManagement from './Admin/pages/userManagement';
+import RoomManagement from './Admin/pages/roomManagement';
+import MakeBookingScreen from './User/pages/makeBooking';
+import AdminBookingsApp from './Admin/pages/adminBooking';
+
 
 
 function App() {
@@ -40,7 +44,9 @@ function App() {
           isLoggedIn ? <MeetingRoomDashboard /> : <Navigate to="/login" />
         } />
          <Route path="/users" element={<UserManagement />} />
-
+         <Route path="/rooms" element={<RoomManagement />} />
+         <Route path="/bookings" element={<AdminBookingsApp />} />
+        <Route path="/rooms/:id" element={<RoomManagement />} />
         {/* AUTH */}
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<SignUp />} />
@@ -69,7 +75,7 @@ function App() {
             <UserLayout><ProfileScreen/></UserLayout> :
             <Navigate to="/login" />
         } />
-
+<Route path="/booking" element={<MakeBookingScreen />} />
 
 
        {/* ADMIN */}
