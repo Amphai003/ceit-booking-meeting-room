@@ -4,7 +4,11 @@ module.exports = {
       "./public/index.html"
     ],
     theme: {
-      extend: {},
+      extend: {
+        fontFamily: {
+        lao: ['"Noto Sans Lao"', 'sans-serif'],
+      },
+      },
     },
     plugins: [],
   }

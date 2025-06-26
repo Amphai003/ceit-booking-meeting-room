@@ -15,6 +15,8 @@ import UserManagement from './Admin/pages/userManagement';
 import RoomManagement from './Admin/pages/roomManagement';
 import MakeBookingScreen from './User/pages/makeBooking';
 import AdminBookingsApp from './Admin/pages/adminBooking';
+import './i18n';
+
 
 
 

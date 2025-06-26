@@ -143,6 +143,8 @@ const AvailabilityBadge = ({ booking }) => {
 };
 
 const BookingCard = ({ booking, onManage, onCancel, onEdit }) => {
+  const [imageError, setImageError] = useState(false);
+  
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
@@ -194,21 +196,51 @@ const BookingCard = ({ booking, onManage, onCancel, onEdit }) => {
   const canCancel = booking.status === 'confirmed' || booking.status === 'pending' || booking.status === 'approved';
   const canEdit = booking.status === 'confirmed' || booking.status === 'pending' || booking.status === 'approved';
 
+  // Function to get room photo URL
+  const getRoomPhotoUrl = () => {
+    // Check different possible photo field structures
+    if (booking.roomId?.photos && Array.isArray(booking.roomId.photos) && booking.roomId.photos.length > 0) {
+      return booking.roomId.photos[0];
+    }
+    if (booking.roomId?.photo) {
+      return booking.roomId.photo;
+    }
+    if (booking.roomId?.image) {
+      return booking.roomId.image;
+    }
+    if (booking.roomId?.images && Array.isArray(booking.roomId.images) && booking.roomId.images.length > 0) {
+      return booking.roomId.images[0];
+    }
+    return null;
+  };
+
+  const photoUrl = getRoomPhotoUrl();
+
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-4">
       <div className="relative">
-        {booking.roomId?.photos?.length > 0 ? (
+        {photoUrl && !imageError ? (
           <div className="aspect-video bg-gray-100 relative overflow-hidden">
             <img 
-              src={booking.roomId.photos[0]} 
-              alt={booking.roomId.name} 
+              src={photoUrl}
+              alt={booking.roomId?.name || 'Meeting Room'}
               className="w-full h-full object-cover"
+              onError={() => setImageError(true)}
+              onLoad={() => setImageError(false)}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
           </div>
         ) : (
           <div className="aspect-video bg-gradient-to-br from-blue-400 via-blue-500 to-blue-700 relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-t from-blue-900/20 to-transparent"></div>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="text-white text-center">
+                <Monitor className="w-12 h-12 mx-auto mb-2 opacity-60" />
+                <p className="text-sm font-medium opacity-80">
+                  {booking.roomId?.name || 'Meeting Room'}
+                </p>
+              </div>
+            </div>
           </div>
         )}
         <div className="absolute top-3 right-3 flex items-center">
@@ -309,6 +341,7 @@ const BookingScreen = () => {
     const fetchBookings = async () => {
       try {
         const response = await api.get('/bookings/me');
+        console.log('Bookings response:', response.data); // Debug log
         setBookings(response.data.data);
       } catch (error) {
         console.error('Error fetching bookings:', error);
