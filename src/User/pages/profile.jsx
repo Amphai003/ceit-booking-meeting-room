@@ -17,7 +17,7 @@ const ProfileScreen = () => {
   const [isLoading, setIsLoading] = useState(true);
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
-  const [selectedLanguage, setSelectedLanguage] = useState('English');
+  // const [selectedLanguage, setSelectedLanguage] = useState('English'); // This state is not used
 
   // Fetch user data on component mount
   useEffect(() => {
@@ -28,7 +28,7 @@ const ProfileScreen = () => {
     try {
       setIsLoading(true);
       const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-      
+
       if (!token) {
         navigate('/login');
         return;
@@ -61,7 +61,7 @@ const ProfileScreen = () => {
           title: 'Error',
           text: 'Failed to load profile data',
           icon: 'error',
-          confirmButtonColor: '#10b981',
+          confirmButtonColor: '#2563EB', // Changed to blue
           customClass: {
             popup: 'rounded-2xl',
             confirmButton: 'rounded-xl font-medium px-6 py-3'
@@ -87,7 +87,7 @@ const ProfileScreen = () => {
         title: 'Invalid File',
         text: 'Please select an image file (JPEG, PNG, etc.)',
         icon: 'error',
-        confirmButtonColor: '#10b981',
+        confirmButtonColor: '#2563EB', // Changed to blue
         customClass: {
           popup: 'rounded-2xl',
           confirmButton: 'rounded-xl font-medium px-6 py-3'
@@ -101,7 +101,7 @@ const ProfileScreen = () => {
         title: 'File Too Large',
         text: 'Please select an image smaller than 5MB',
         icon: 'error',
-        confirmButtonColor: '#10b981',
+        confirmButtonColor: '#2563EB', // Changed to blue
         customClass: {
           popup: 'rounded-2xl',
           confirmButton: 'rounded-xl font-medium px-6 py-3'
@@ -113,7 +113,7 @@ const ProfileScreen = () => {
     try {
       setIsUploading(true);
       const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-      
+
       // Create FormData and append the file
       const formData = new FormData();
       formData.append('image', file);
@@ -127,10 +127,10 @@ const ProfileScreen = () => {
       });
 
       // Extract the image URL from the upload response
-      const imageUrl = uploadResponse.data.Location || 
-                      uploadResponse.data.url || 
-                      uploadResponse.data.imageUrl || 
-                      uploadResponse.data;
+      const imageUrl = uploadResponse.data.Location ||
+        uploadResponse.data.url ||
+        uploadResponse.data.imageUrl ||
+        uploadResponse.data;
 
       // Update user profile with new photo
       const updateResponse = await api.patch('/users/updateMe', {
@@ -152,7 +152,7 @@ const ProfileScreen = () => {
         title: 'Success!',
         text: 'Profile picture updated successfully',
         icon: 'success',
-        confirmButtonColor: '#10b981',
+        confirmButtonColor: '#2563EB', // Changed to blue
         customClass: {
           popup: 'rounded-2xl',
           confirmButton: 'rounded-xl font-medium px-6 py-3'
@@ -164,7 +164,7 @@ const ProfileScreen = () => {
         title: 'Upload Failed',
         text: error.response?.data?.message || 'Failed to upload profile picture',
         icon: 'error',
-        confirmButtonColor: '#10b981',
+        confirmButtonColor: '#2563EB', // Changed to blue
         customClass: {
           popup: 'rounded-2xl',
           confirmButton: 'rounded-xl font-medium px-6 py-3'
@@ -176,23 +176,23 @@ const ProfileScreen = () => {
   };
 
   const handleEditProfile = () => {
-    alert('Edit Profile clicked');
+    navigate('/edit-profile-user')
   };
 
   const handlePrivacyPolicy = () => {
-    alert('Privacy Policy clicked');
+    navigate('/privacy-policy')
   };
 
   const handleTermsConditions = () => {
-    alert('Terms & Conditions clicked');
+    navigate('/term-condition')
   };
 
   const handleChangeLanguage = () => {
-    alert('Navigate to Language Settings page');
+    navigate('/change-language')
   };
 
   const handleChangePassword = () => {
-    alert('Change Password clicked');
+    navigate('/change-password')
   };
 
   const handleLogout = () => {
@@ -220,7 +220,7 @@ const ProfileScreen = () => {
           title: 'Logged out!',
           text: 'You have been successfully logged out and your session has been cleared.',
           icon: 'success',
-          confirmButtonColor: '#10b981',
+          confirmButtonColor: '#2563EB', // Changed to blue
           confirmButtonText: 'OK',
           customClass: {
             popup: 'rounded-2xl',
@@ -234,11 +234,11 @@ const ProfileScreen = () => {
   };
 
   const buttons = [
-    { icon: Edit, label: 'Edit Profile', onClick: handleEditProfile, color: 'bg-slate-600 hover:bg-slate-700', isLogout: false },
-    { icon: Shield, label: 'Privacy Policy', onClick: handlePrivacyPolicy, color: 'bg-slate-600 hover:bg-slate-700', isLogout: false },
-    { icon: FileText, label: 'Terms & Conditions', onClick: handleTermsConditions, color: 'bg-slate-600 hover:bg-slate-700', isLogout: false },
-    { icon: Globe, label: 'Change Language', onClick: handleChangeLanguage, color: 'bg-slate-600 hover:bg-slate-700', isLogout: false },
-    { icon: Lock, label: 'Change Password', onClick: handleChangePassword, color: 'bg-slate-600 hover:bg-slate-700', isLogout: false },
+    { icon: Edit, label: 'Edit Profile', onClick: handleEditProfile, color: 'bg-blue-600 hover:bg-blue-700', isLogout: false }, // Changed to blue
+    { icon: Shield, label: 'Privacy Policy', onClick: handlePrivacyPolicy, color: 'bg-blue-600 hover:bg-blue-700', isLogout: false }, // Changed to blue
+    { icon: FileText, label: 'Terms & Conditions', onClick: handleTermsConditions, color: 'bg-blue-600 hover:bg-blue-700', isLogout: false }, // Changed to blue
+    { icon: Globe, label: 'Change Language', onClick: handleChangeLanguage, color: 'bg-blue-600 hover:bg-blue-700', isLogout: false }, // Changed to blue
+    { icon: Lock, label: 'Change Password', onClick: handleChangePassword, color: 'bg-blue-600 hover:bg-blue-700', isLogout: false }, // Changed to blue
     { icon: LogOut, label: 'Logout', onClick: handleLogout, color: 'bg-red-500 hover:bg-red-600', isLogout: true }
   ];
 
@@ -279,11 +279,11 @@ const ProfileScreen = () => {
               {/* Avatar Section */}
               <div className="flex flex-col items-center mb-6">
                 <div className="relative">
-                  <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mb-4 shadow-lg overflow-hidden">
+                  <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-blue-700 rounded-full flex items-center justify-center mb-4 shadow-lg overflow-hidden"> {/* Changed gradient to blue */}
                     {user.photo ? (
-                      <img 
-                        src={user.photo} 
-                        alt="Profile" 
+                      <img
+                        src={user.photo}
+                        alt="Profile"
                         className="w-full h-full rounded-full object-cover"
                         onError={(e) => {
                           e.target.style.display = 'none';
@@ -298,7 +298,7 @@ const ProfileScreen = () => {
                       <User className="w-12 h-12 text-white" style={{ display: 'none' }} />
                     )}
                   </div>
-                  <button 
+                  <button
                     onClick={handleAvatarClick}
                     disabled={isUploading}
                     className="absolute -bottom-2 -right-2 bg-white rounded-full p-2 shadow-md border-2 border-gray-100 hover:bg-gray-50 transition-colors disabled:opacity-50"
@@ -306,7 +306,7 @@ const ProfileScreen = () => {
                     {isUploading ? (
                       <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
                     ) : (
-                      <Camera className="w-4 h-4 text-gray-600" />
+                      <Camera className="w-4 h-4 text-blue-600" /> 
                     )}
                   </button>
                   <input
@@ -333,8 +333,8 @@ const ProfileScreen = () => {
 
               {/* Status Badge */}
               <div className="flex justify-center">
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                  <div className="w-2 h-2 bg-green-400 rounded-full mr-2"></div>
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"> {/* Changed to blue */}
+                  <div className="w-2 h-2 bg-blue-400 rounded-full mr-2"></div> {/* Changed to blue */}
                   Active
                 </span>
               </div>

@@ -15,18 +15,31 @@ const AdminBookingsApp = () => {
             setLoading(true);
             const response = await api.get('/bookings?limit=50');
             const bookingsData = response?.data?.data || response?.data || response || [];
-            
-            // Initialize approvalStatus if not present
-            const bookingsWithApprovalStatus = Array.isArray(bookingsData) 
-                ? bookingsData.map(booking => ({
-                    ...booking,
-                    approvalStatus: booking.approvalStatus || {
-                        admin1Approved: false,
-                        admin2Approved: false
-                    }
-                }))
+
+            // Get current user's ID to check if they've already approved
+            const userResponse = await api.get('/users/me');
+            const currentUserId = userResponse?.data?.data?._id || userResponse?.data?._id;
+
+            const bookingsWithApprovalStatus = Array.isArray(bookingsData)
+                ? bookingsData
+                    .filter(booking => booking && typeof booking === 'object')
+                    .map(booking => ({
+                        ...booking,
+                        approvalStatus: booking.approvalStatus || {
+                            admin1Approved: false,
+                            admin2Approved: false,
+                            admin1Id: null,
+                            admin2Id: null
+                        },
+                        // Add a flag to check if current user has approved
+                        currentUserHasApproved:
+                            currentUserId && (
+                                booking.approvalStatus?.admin1Id === currentUserId ||
+                                booking.approvalStatus?.admin2Id === currentUserId
+                            )
+                    }))
                 : [];
-                
+
             setBookings(bookingsWithApprovalStatus);
         } catch (error) {
             console.error('Error fetching bookings:', error);
@@ -55,7 +68,7 @@ const AdminBookingsApp = () => {
         if (result.isConfirmed) {
             try {
                 const response = await api.patch(`/bookings/${bookingId}/approve`);
-                
+
                 if (response.data.success === false) {
                     await Swal.fire({
                         title: 'Already Approved',
@@ -64,13 +77,16 @@ const AdminBookingsApp = () => {
                         confirmButtonText: 'OK'
                     });
                 } else {
+                    // FIX: Handle API response that might not have a nested `data` object
+                    const updatedBookingData = response.data.data || response.data;
+
                     setBookings(prev =>
                         prev.map(booking =>
                             booking._id === bookingId
                                 ? {
                                     ...booking,
-                                    status: response.data.data.status || 'pending',
-                                    approvalStatus: response.data.data.approvalStatus || {
+                                    status: updatedBookingData.status || 'pending',
+                                    approvalStatus: updatedBookingData.approvalStatus || {
                                         admin1Approved: true,
                                         admin2Approved: booking.approvalStatus?.admin2Approved || false
                                     }
@@ -79,10 +95,10 @@ const AdminBookingsApp = () => {
                         )
                     );
                     await Swal.fire({
-                        title: response.data.data.status === 'approved' 
-                            ? 'Booking Approved' 
+                        title: updatedBookingData.status === 'approved'
+                            ? 'Booking Approved'
                             : 'Approval Recorded',
-                        text: response.data.data.status === 'approved'
+                        text: updatedBookingData.status === 'approved'
                             ? 'Booking has been fully approved by both admins!'
                             : 'Your approval has been recorded. Waiting for second admin approval.',
                         icon: 'success',
@@ -92,11 +108,11 @@ const AdminBookingsApp = () => {
             } catch (error) {
                 console.error('Error approving booking:', error);
                 let errorMessage = 'Failed to approve booking. Please try again.';
-                
+
                 if (error.response?.data?.message) {
                     errorMessage = error.response.data.message;
                 }
-                
+
                 await Swal.fire({
                     title: 'Error',
                     text: errorMessage,
@@ -145,7 +161,7 @@ const AdminBookingsApp = () => {
         }
     };
 
-    const handleDelete = async (bookingId) => {
+    const handleDelete = async (bookingId, status) => {
         const result = await Swal.fire({
             title: 'Delete Booking',
             text: 'Are you sure you want to delete this booking? This action cannot be undone.',
@@ -157,8 +173,14 @@ const AdminBookingsApp = () => {
 
         if (result.isConfirmed) {
             try {
-                await api.delete(`/bookings/${bookingId}`);
+                if (status === 'history') {
+                    await api.delete(`/bookings/history/${bookingId}`);
+                } else {
+                    await api.delete(`/bookings/${bookingId}`);
+                }
+
                 setBookings(prev => prev.filter(booking => booking._id !== bookingId));
+
                 await Swal.fire({
                     title: 'Deleted',
                     text: 'Booking deleted successfully!',
@@ -167,15 +189,21 @@ const AdminBookingsApp = () => {
                 });
             } catch (error) {
                 console.error('Error deleting booking:', error);
+                let msg = 'Failed to delete booking. Please try again.';
+                if (error?.response?.data?.message) {
+                    msg = error.response.data.message;
+                }
+
                 await Swal.fire({
                     title: 'Error',
-                    text: 'Failed to delete booking. Please try again.',
+                    text: msg,
                     icon: 'error',
                     confirmButtonText: 'OK'
                 });
             }
         }
     };
+
 
     const handleGoBack = () => {
         window.history.back();
@@ -212,7 +240,7 @@ const AdminBookingsApp = () => {
         if (approvalStatus.admin1Approved && status === 'pending') {
             return 'bg-blue-100 text-blue-800 border-blue-200';
         }
-        
+
         switch (status) {
             case 'approved':
                 return 'bg-green-100 text-green-800 border-green-200';
@@ -321,7 +349,7 @@ const AdminBookingsApp = () => {
                                 />
                             </div>
                         </div>
-                        
+
                         {/* Status Filter */}
                         <div className="sm:w-48">
                             <div className="relative">
@@ -344,10 +372,10 @@ const AdminBookingsApp = () => {
                 {/* Stats Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
                     {['all', 'pending', 'approved', 'rejected'].map(status => {
-                        const count = status === 'all' 
+                        const count = status === 'all'
                             ? (Array.isArray(bookings) ? bookings.length : 0)
                             : (Array.isArray(bookings) ? bookings.filter(b => b.status === status).length : 0);
-                        
+
                         return (
                             <div key={status} className="bg-white rounded-lg shadow p-6">
                                 <div className="flex items-center">
@@ -373,7 +401,7 @@ const AdminBookingsApp = () => {
                             <Calendar className="mx-auto h-12 w-12 text-gray-400" />
                             <h3 className="mt-2 text-sm font-medium text-gray-900">No bookings found</h3>
                             <p className="mt-1 text-sm text-gray-500">
-                                {searchTerm || statusFilter !== 'all' 
+                                {searchTerm || statusFilter !== 'all'
                                     ? 'Try adjusting your search or filter criteria.'
                                     : 'No bookings have been made yet.'}
                             </p>
@@ -411,7 +439,7 @@ const AdminBookingsApp = () => {
                                         const roomType = booking.roomId?.roomType || 'N/A';
                                         const userName = `${booking.userId?.firstName || ''} ${booking.userId?.lastName || ''}`.trim();
                                         const userEmail = booking.userId?.email || 'N/A';
-                                        
+
                                         return (
                                             <tr key={booking._id} className="hover:bg-gray-50">
                                                 <td className="px-6 py-4 whitespace-nowrap">
@@ -493,7 +521,7 @@ const AdminBookingsApp = () => {
                                                             </>
                                                         )}
                                                         <button
-                                                            onClick={() => handleDelete(booking._id)}
+                                                            onClick={() => handleDelete(booking._id, booking.status)}
                                                             className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
                                                         >
                                                             <Trash2 className="w-3 h-3 mr-1" />

@@ -1,130 +1,109 @@
-import React, { useState } from 'react';
-import { Heart, MapPin, Star, Wifi, Car, Coffee, Utensils, Users, Monitor, Projector } from 'lucide-react';
-
-// Mock data for favorite meeting rooms
-const initialFavoriteRooms = [
-  {
-    id: 1,
-    name: "iOURi Room",
-    location: "Hosting room 2hr+ • Floor 45",
-    description: "This room is big room with all necessary equipment and services such as cooling temperature",
-    image: "/api/placeholder/400/300",
-    rating: 4.96,
-    capacity: 12,
-    amenities: ['wifi', 'projector', 'coffee', 'parking'],
-    isFavorite: true
-  },
-  {
-    id: 2,
-    name: "Executive Conference Room",
-    location: "Business District • Floor 32",
-    description: "Premium conference room with panoramic city views and high-end presentation facilities",
-    image: "/api/placeholder/400/300",
-    rating: 4.88,
-    capacity: 20,
-    amenities: ['wifi', 'projector', 'coffee', 'monitor'],
-    isFavorite: true
-  },
-  {
-    id: 3,
-    name: "Creative Meeting Studio",
-    location: "Arts Quarter • Floor 12",
-    description: "Inspiring meeting space with natural light and flexible layout for brainstorming sessions",
-    image: "/api/placeholder/400/300",
-    rating: 4.92,
-    capacity: 8,
-    amenities: ['wifi', 'monitor', 'coffee'],
-    isFavorite: true
-  },
-  {
-    id: 4,
-    name: "Boardroom Elite",
-    location: "Corporate Center • Floor 28",
-    description: "Sophisticated boardroom with premium furnishing and advanced AV equipment for executive meetings",
-    image: "/api/placeholder/400/300",
-    rating: 4.95,
-    capacity: 16,
-    amenities: ['wifi', 'projector', 'monitor', 'coffee', 'parking'],
-    isFavorite: true
-  }
-];
-
-const AmenityIcon = ({ type }) => {
-  const icons = {
-    wifi: Wifi,
-    parking: Car,
-    coffee: Coffee,
-    restaurant: Utensils,
-    projector: Projector,
-    monitor: Monitor
-  };
-  
-  const Icon = icons[type];
-  return Icon ? <Icon className="w-4 h-4 text-gray-600" /> : null;
-};
+import React, { useState, useEffect, useCallback } from 'react';
+import { Heart, MapPin, Users, Loader2, ServerCrash, Search } from 'lucide-react';
+import api from '../../api';
+import { useNavigate } from 'react-router-dom';
+import Swal from 'sweetalert2';
 
 const FavoriteRoomCard = ({ room, onToggleFavorite, onBook }) => {
+  const [imageError, setImageError] = useState(false);
+
+  // Function to get room photo URL, similar to UserHomeScreen
+  const getRoomPhotoUrl = () => {
+    if (room.photos && Array.isArray(room.photos) && room.photos.length > 0) {
+      return room.photos[0];
+    }
+    if (room.photo) {
+      return room.photo;
+    }
+    if (room.image) {
+      return room.image;
+    }
+    if (room.images && Array.isArray(room.images) && room.images.length > 0) {
+      return room.images[0];
+    }
+    return null;
+  };
+
+  const photoUrl = getRoomPhotoUrl();
+
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-4">
-      <div className="relative">
-        <div className="aspect-video bg-gradient-to-br from-blue-400 via-blue-500 to-blue-700 relative overflow-hidden">
-          {/* Simulated room image with curved windows */}
-          <div className="absolute inset-0 bg-gradient-to-t from-blue-900/20 to-transparent"></div>
-          <div className="absolute bottom-4 left-4 right-4">
-            <div className="flex space-x-2">
-              {[...Array(6)].map((_, i) => (
-                <div key={i} className="w-16 h-24 bg-white/10 backdrop-blur-sm rounded border border-white/20"></div>
-              ))}
+    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow cursor-pointer">
+      <div className="relative h-48 bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
+        {photoUrl && !imageError ? (
+          <img
+            src={photoUrl}
+            alt={room.name}
+            className="w-full h-full object-cover"
+            onError={() => setImageError(true)}
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <div className="text-4xl font-bold text-gray-600">
+              {room.name ? room.name.substring(0, 2).toUpperCase() : 'RM'}
             </div>
           </div>
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-8 h-12 bg-black/30 rounded-full"></div>
-          </div>
-        </div>
-        
+        )}
         <button
-          onClick={() => onToggleFavorite(room.id)}
-          className="absolute top-3 right-3 w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-sm"
+          onClick={(e) => {
+            e.stopPropagation(); // Prevent triggering the card click
+            onToggleFavorite(room);
+          }}
+          className="absolute top-3 right-3 p-2 rounded-full transition-colors backdrop-blur-sm bg-blue-600/20 hover:bg-white/20" // Changed to blue
         >
-          <Heart 
-            className={`w-4 h-4 ${room.isFavorite ? 'text-red-500 fill-red-500' : 'text-gray-400'}`} 
-          />
+          <Heart className="w-5 h-5 fill-red-500 text-red-500" /> {/* Always filled as it's a favorite */}
         </button>
       </div>
-      
+
       <div className="p-4">
         <div className="flex items-start justify-between mb-2">
-          <h3 className="font-semibold text-lg text-gray-900">{room.name}</h3>
+          <h3 className="font-semibold text-lg truncate">{room.name || 'Unnamed Room'}</h3>
+        </div>
+
+        <div className="flex items-center space-x-2 text-sm text-gray-600 mb-2">
+          <span>{room.roomType || 'Room'}</span>
+          <span>•</span>
           <div className="flex items-center space-x-1">
-            <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-            <span className="text-sm font-medium">{room.rating}</span>
+            <MapPin className="w-3 h-3" />
+            <span>{room.location || 'Location'}</span>
           </div>
         </div>
-        
-        <div className="flex items-center text-gray-600 text-sm mb-2">
-          <MapPin className="w-4 h-4 mr-1" />
-          <span>{room.location}</span>
+
+        <div className="flex items-center space-x-2 mb-3">
+          <div className="flex items-center space-x-1">
+            <Users className="w-4 h-4 text-gray-500" />
+            <span className="text-sm text-gray-600">{room.capacity || 0} people</span>
+          </div>
         </div>
-        
-        <div className="flex items-center text-gray-600 text-sm mb-3">
-          <Users className="w-4 h-4 mr-1" />
-          <span>Up to {room.capacity} people</span>
+
+        <div className="text-gray-600">
+          {room.equipment?.length > 0 && (
+            <div>
+              Equipment: {room.equipment.map((item, index) => {
+                const name = item.name || 'Unknown';
+                return (
+                  <span key={`eq-${index}`}>
+                    {index > 0 && ', '}
+                    {name} ({item.quantity || 0})
+                  </span>
+                );
+              })}
+            </div>
+          )}
         </div>
-        
-        <p className="text-gray-600 text-sm mb-3 line-clamp-2">
-          {room.description}
-        </p>
-        
-        <div className="flex items-center space-x-3 mb-4">
-          {room.amenities.map((amenity, index) => (
-            <AmenityIcon key={index} type={amenity} />
-          ))}
-        </div>
-        
-        <div className="flex justify-end">
+
+        {room.note && (
+          <p className="text-sm text-gray-600 leading-relaxed line-clamp-2 mt-2">
+            Note: {room.note}
+          </p>
+        )}
+
+        <div className="flex justify-end mt-4">
           <button
-            onClick={() => onBook(room)}
-            className="bg-black text-white px-6 py-2 rounded-full text-sm font-medium hover:bg-gray-800 transition-colors"
+            onClick={(e) => {
+              e.stopPropagation(); // Prevent triggering the card click
+              onBook(room);
+            }}
+            className="bg-blue-600 text-white px-6 py-2 rounded-full text-sm font-medium hover:bg-blue-700 transition-colors" // Changed to blue
           >
             Book Now
           </button>
@@ -135,76 +114,173 @@ const FavoriteRoomCard = ({ room, onToggleFavorite, onBook }) => {
 };
 
 const FavoriteRoomsScreen = () => {
-  const [favoriteRooms, setFavoriteRooms] = useState(initialFavoriteRooms);
+  const [favoriteItems, setFavoriteItems] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
-  const handleToggleFavorite = (roomId) => {
-    setFavoriteRooms(rooms => 
-      rooms.map(room => 
-        room.id === roomId 
-          ? { ...room, isFavorite: !room.isFavorite }
-          : room
-      ).filter(room => room.isFavorite) // Remove from favorites if unfavorited
-    );
+  const fetchFavoriteRooms = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await api.get('/favorite-rooms');
+      const transformedData = (response.data || []).map(item => ({
+        ...item.room,
+        isFavorite: true
+      }));
+      setFavoriteItems(transformedData);
+    } catch (err) {
+      console.error("Failed to fetch favorite rooms:", err);
+      setError(err.message || "Could not load your favorite rooms.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchFavoriteRooms();
+  }, [fetchFavoriteRooms]);
+
+  const handleToggleFavorite = async (roomToRemove) => {
+    const result = await Swal.fire({
+      title: 'Are you sure?',
+      text: `Remove "${roomToRemove.name}" from your favorites?`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#2563EB', // Changed to blue
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Yes, remove it!'
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await api.delete('/favorite-rooms', {
+          data: { roomId: roomToRemove._id }
+        });
+        setFavoriteItems(currentItems =>
+          currentItems.filter(room => room._id !== roomToRemove._id)
+        );
+        Swal.fire(
+          'Removed!',
+          `"${roomToRemove.name}" has been removed from your favorites.`,
+          'success'
+        );
+      } catch (err) {
+        console.error("Failed to unfavorite room:", err);
+        Swal.fire(
+          'Error!',
+          'Could not remove the room. Please try again.',
+          'error'
+        );
+        fetchFavoriteRooms();
+      }
+    }
   };
 
   const handleBook = (room) => {
-    alert(`Booking ${room.name}...`);
+    if (room.status === 'available') {
+      navigate('/booking', { state: { room } });
+    } else {
+      Swal.fire({
+        icon: 'info',
+        title: 'Room Not Available',
+        text: 'This room is currently not available for booking',
+        confirmButtonColor: '#2563EB' // Changed to blue
+      });
+    }
   };
 
-  const filteredRooms = favoriteRooms.filter(room =>
-    room.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    room.location.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredItems = favoriteItems.filter(item =>
+    item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (item.location || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const renderContent = () => {
+    if (loading) {
+      return (
+        <div className="flex flex-col items-center justify-center py-16">
+          <Loader2 className="w-12 h-12 text-blue-500 animate-spin mb-4" />
+          <p className="text-gray-600">Loading Favorites...</p>
+        </div>
+      );
+    }
+
+    if (error) {
+      return (
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <ServerCrash className="w-16 h-16 text-red-400 mb-4" />
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">Something went wrong</h3>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <button
+            onClick={fetchFavoriteRooms}
+            className="bg-blue-600 text-white px-5 py-2 rounded-full text-sm font-medium hover:bg-blue-700 transition-colors" // Changed to blue
+          >
+            Try Again
+          </button>
+        </div>
+      );
+    }
+
+    if (filteredItems.length === 0) {
+      return (
+        <div className="flex flex-col items-center justify-center py-16">
+          <Heart className="w-16 h-16 text-gray-300 mb-4" />
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">No Favorite Rooms</h3>
+          <p className="text-gray-600 text-center">
+            {searchQuery ? 'No rooms match your search.' : 'Start adding rooms to your favorites to see them here.'}
+          </p>
+        </div>
+      );
+    }
+
+    return (
+      <>
+        <p className="text-gray-600 text-sm mb-4">
+          {filteredItems.length} favorite meeting room{filteredItems.length !== 1 ? 's' : ''}
+        </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredItems.map(room => (
+            <FavoriteRoomCard
+              key={room._id}
+              room={room}
+              onToggleFavorite={handleToggleFavorite}
+              onBook={handleBook}
+            />
+          ))}
+        </div>
+      </>
+    );
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header */}
       <div className="bg-white border-b border-gray-100 sticky top-0 z-40">
-        <div className="px-4 py-4">
-          <h1 className="text-2xl font-bold text-gray-900 text-center">Favorite</h1>
+        <div className="px-4 py-4 max-w-5xl mx-auto text-center">
+          <h1 className="text-2xl font-bold text-gray-900">Favorite Rooms</h1>
         </div>
       </div>
 
-      {/* Search Bar */}
-      <div className="bg-white px-4 py-3 border-b border-gray-100">
+      {/* Search Input */}
+      <div className="bg-white px-4 py-3 border-b border-gray-100 sticky top-[72px] z-30 max-w-5xl mx-auto w-full">
         <div className="relative">
-          <input
-            type="text"
-            placeholder="Search favorite meeting rooms..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full px-4 py-3 bg-gray-50 rounded-full text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-colors"
-          />
+          <div className="flex items-center bg-gray-100 rounded-full px-4 py-3">
+            <Search className="w-5 h-5 text-gray-400 mr-2" />
+            <input
+              type="text"
+              placeholder="Search in your favorites..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="flex-1 bg-transparent text-gray-600 placeholder-gray-400 outline-none"
+            />
+          </div>
         </div>
       </div>
 
-      {/* Content */}
-      <div className="px-4 py-4">
-        {filteredRooms.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16">
-            <Heart className="w-16 h-16 text-gray-300 mb-4" />
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">No Favorite Meeting Rooms</h3>
-            <p className="text-gray-600 text-center">
-              {searchQuery ? 'No meeting rooms match your search.' : 'Start adding meeting rooms to your favorites to see them here.'}
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            <p className="text-gray-600 text-sm">
-              {filteredRooms.length} favorite meeting room{filteredRooms.length !== 1 ? 's' : ''}
-            </p>
-            
-            {filteredRooms.map(room => (
-              <FavoriteRoomCard
-                key={room.id}
-                room={room}
-                onToggleFavorite={handleToggleFavorite}
-                onBook={handleBook}
-              />
-            ))}
-          </div>
-        )}
+      {/* Content Area (Favorite Room Cards) */}
+      <div className="flex-1 px-4 py-4 w-full max-w-5xl mx-auto">
+        {renderContent()}
       </div>
     </div>
   );
