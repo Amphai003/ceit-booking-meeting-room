@@ -57,7 +57,7 @@ const Dashboard = ({ rooms, upcomingMeetings, getStatusColor, getStatusIcon ,nav
           </div>
         </div>
         
-        <UpcomingMeetings meetings={upcomingMeetings} />
+        <UpcomingMeetings meetings={upcomingMeetings} navigate={navigate} />
       </div>
     </div>
   );

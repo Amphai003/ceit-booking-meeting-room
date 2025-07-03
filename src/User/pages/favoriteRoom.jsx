@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Heart, MapPin, Users, Loader2, ServerCrash, Search } from 'lucide-react';
+import React, { useState, useEffect,useCallback } from 'react'; // Added useCallback
+import { Heart, MapPin, Users, Loader2, ServerCrash, Search, Wifi, Monitor, Mic } from 'lucide-react'; // Added equipment icons
 import api from '../../api';
 import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
@@ -8,7 +8,7 @@ const FavoriteRoomCard = ({ room, onToggleFavorite, onBook }) => {
   const [imageError, setImageError] = useState(false);
 
   // Function to get room photo URL, similar to UserHomeScreen
-  const getRoomPhotoUrl = () => {
+  const getRoomPhotoUrl = useCallback(() => { // Memoize with useCallback
     if (room.photos && Array.isArray(room.photos) && room.photos.length > 0) {
       return room.photos[0];
     }
@@ -22,9 +22,24 @@ const FavoriteRoomCard = ({ room, onToggleFavorite, onBook }) => {
       return room.images[0];
     }
     return null;
-  };
+  }, [room]); // Depend on room for photo URL changes
 
   const photoUrl = getRoomPhotoUrl();
+
+  // --- New: Utility function for getting equipment icon (copied from UserHomeScreen) ---
+  const getEquipmentIcon = useCallback((name) => {
+    const lowerName = (name || '').toLowerCase();
+    if (lowerName.includes('tv') || lowerName.includes('monitor') || lowerName.includes('projector')) {
+      return <Monitor className="w-3 h-3 text-gray-500" />;
+    } else if (lowerName.includes('mic') || lowerName.includes('microphone')) {
+      return <Mic className="w-3 h-3 text-gray-500" />;
+    } else if (lowerName.includes('wifi') || lowerName.includes('internet')) {
+      return <Wifi className="w-3 h-3 text-gray-500" />;
+    } else {
+      return null; // Return null if no specific icon
+    }
+  }, []);
+  // --- End New ---
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow cursor-pointer">
@@ -48,7 +63,7 @@ const FavoriteRoomCard = ({ room, onToggleFavorite, onBook }) => {
             e.stopPropagation(); // Prevent triggering the card click
             onToggleFavorite(room);
           }}
-          className="absolute top-3 right-3 p-2 rounded-full transition-colors backdrop-blur-sm bg-blue-600/20 hover:bg-white/20" // Changed to blue
+          className="absolute top-3 right-3 p-2 rounded-full transition-colors backdrop-blur-sm bg-blue-600/20 hover:bg-white/20"
         >
           <Heart className="w-5 h-5 fill-red-500 text-red-500" /> {/* Always filled as it's a favorite */}
         </button>
@@ -71,39 +86,45 @@ const FavoriteRoomCard = ({ room, onToggleFavorite, onBook }) => {
         <div className="flex items-center space-x-2 mb-3">
           <div className="flex items-center space-x-1">
             <Users className="w-4 h-4 text-gray-500" />
-            <span className="text-sm text-gray-600">{room.capacity || 0} people</span>
+            <span className="text-sm text-gray-600">{room.capacity || 0} capacity</span>
           </div>
         </div>
 
         <div className="text-gray-600">
           {room.equipment?.length > 0 && (
             <div>
-              Equipment: {room.equipment.map((item, index) => {
-                const name = item.name || 'Unknown';
-                return (
-                  <span key={`eq-${index}`}>
-                    {index > 0 && ', '}
-                    {name} ({item.quantity || 0})
-                  </span>
-                );
-              })}
+              <p className="text-sm font-medium text-gray-700 mb-1">Equipment:</p> {/* Added a heading */}
+              <ul className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm"> {/* Using ul for list */}
+                {room.equipment.map((item, index) => {
+                  const equipmentName = item.equipment?.name || item.name || 'Unknown'; // Prioritize nested name
+                  const quantity = item.quantity || 0;
+                  const icon = getEquipmentIcon(equipmentName);
+
+                  return (
+                    <li key={`eq-${index}`} className="flex items-center space-x-1">
+                      {icon}
+                      <span>{equipmentName} ({quantity})</span>
+                    </li>
+                  );
+                })}
+              </ul>
             </div>
           )}
         </div>
 
         {room.note && (
           <p className="text-sm text-gray-600 leading-relaxed line-clamp-2 mt-2">
-            Note: {room.note}
+            <span className="font-medium">Note:</span> {room.note}
           </p>
         )}
 
         <div className="flex justify-end mt-4">
           <button
             onClick={(e) => {
-              e.stopPropagation(); // Prevent triggering the card click
+              e.stopPropagation();
               onBook(room);
             }}
-            className="bg-blue-600 text-white px-6 py-2 rounded-full text-sm font-medium hover:bg-blue-700 transition-colors" // Changed to blue
+            className="bg-blue-600 text-white px-6 py-2 rounded-full text-sm font-medium hover:bg-blue-700 transition-colors"
           >
             Book Now
           </button>
@@ -113,6 +134,7 @@ const FavoriteRoomCard = ({ room, onToggleFavorite, onBook }) => {
   );
 };
 
+// --- FavoriteRoomsScreen component remains the same as before, no changes needed here directly ---
 const FavoriteRoomsScreen = () => {
   const [favoriteItems, setFavoriteItems] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -125,9 +147,10 @@ const FavoriteRoomsScreen = () => {
       setLoading(true);
       setError(null);
       const response = await api.get('/favorite-rooms');
+      // Ensure the room object itself is spread, and isFavorite is explicitly set
       const transformedData = (response.data || []).map(item => ({
-        ...item.room,
-        isFavorite: true
+        ...item.room, // This ensures all room properties are at the top level
+        isFavorite: true // This is crucial for consistency with UserHomeScreen's favorite state
       }));
       setFavoriteItems(transformedData);
     } catch (err) {
@@ -148,7 +171,7 @@ const FavoriteRoomsScreen = () => {
       text: `Remove "${roomToRemove.name}" from your favorites?`,
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonColor: '#2563EB', // Changed to blue
+      confirmButtonColor: '#2563EB',
       cancelButtonColor: '#d33',
       confirmButtonText: 'Yes, remove it!'
     });
@@ -173,7 +196,7 @@ const FavoriteRoomsScreen = () => {
           'Could not remove the room. Please try again.',
           'error'
         );
-        fetchFavoriteRooms();
+        fetchFavoriteRooms(); // Re-fetch to ensure state is accurate
       }
     }
   };
@@ -186,7 +209,7 @@ const FavoriteRoomsScreen = () => {
         icon: 'info',
         title: 'Room Not Available',
         text: 'This room is currently not available for booking',
-        confirmButtonColor: '#2563EB' // Changed to blue
+        confirmButtonColor: '#2563EB'
       });
     }
   };
@@ -214,7 +237,7 @@ const FavoriteRoomsScreen = () => {
           <p className="text-gray-600 mb-4">{error}</p>
           <button
             onClick={fetchFavoriteRooms}
-            className="bg-blue-600 text-white px-5 py-2 rounded-full text-sm font-medium hover:bg-blue-700 transition-colors" // Changed to blue
+            className="bg-blue-600 text-white px-5 py-2 rounded-full text-sm font-medium hover:bg-blue-700 transition-colors"
           >
             Try Again
           </button>

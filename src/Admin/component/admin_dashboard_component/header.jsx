@@ -96,7 +96,7 @@ const Header = ({ activeTab, setSidebarOpen }) => {
             </button>
           </div>
           <button 
-            onClick={() => navigate('/profile')}
+            onClick={() => navigate('/settings')}
             className="flex items-center gap-3 hover:bg-gray-100 rounded-lg p-1"
           >
             {!isLoading && (

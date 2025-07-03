@@ -166,6 +166,10 @@ const BookingCard = ({ booking, onManage, onCancel, onEdit }) => {
       minutes += 60;
     }
 
+    if (hours < 0) { // Handle cases where end time is on the next day, though rare for single meetings
+        hours += 24;
+    }
+
     if (hours === 0) {
       return `${minutes} ${minutes === 1 ? 'minute' : 'minutes'}`;
     } else if (minutes === 0) {
@@ -183,9 +187,19 @@ const BookingCard = ({ booking, onManage, onCancel, onEdit }) => {
 
   // --- MODIFIED LOGIC HERE ---
   // A booking can only be canceled if its status is 'confirmed' or 'pending'.
-  // A booking can only be edited if its status is 'confirmed' or 'pending'.
   const canCancel = booking.status === 'confirmed' || booking.status === 'pending';
-  const canEdit = booking.status === 'confirmed' || booking.status === 'pending';
+
+  // A booking can only be edited if its status is 'confirmed' or 'pending' AND the meeting start time hasn't passed.
+  const now = new Date();
+  const bookingDate = new Date(booking.bookingDate);
+  const [startHours, startMinutes] = booking.startTime.split(':').map(Number);
+
+  const meetingStartDateTime = new Date(bookingDate);
+  meetingStartDateTime.setHours(startHours, startMinutes, 0, 0);
+
+  const hasMeetingStarted = now > meetingStartDateTime;
+
+  const canEdit = (booking.status === 'confirmed' || booking.status === 'pending') && !hasMeetingStarted;
   // --- END MODIFIED LOGIC ---
 
   // Function to get room photo URL
@@ -270,7 +284,7 @@ const BookingCard = ({ booking, onManage, onCancel, onEdit }) => {
 
         <div className="flex items-center text-gray-600 text-sm mb-3">
           <Users className="w-4 h-4 mr-1" />
-          {booking.attendees || 1} people (Capacity: {booking.roomId?.capacity || 'N/A'})
+          {booking.numberOfAttendees || booking.attendees || 'N/A'} people (Capacity: {booking.roomId?.capacity || 'N/A'})
         </div>
 
         {booking.purpose && (
@@ -378,6 +392,7 @@ const BookingScreen = () => {
         <p><strong>Time:</strong> ${booking.startTime} - ${booking.endTime}</p>
         <p><strong>Status:</strong> ${booking.status}</p>
         <p><strong>Purpose:</strong> ${booking.purpose || 'Not specified'}</p>
+        <p><strong>Attendees:</strong> ${booking.numberOfAttendees || 'N/A'}</p>
         ${booking.requestedEquipment?.length ? `
           <p><strong>Requested Equipment:</strong></p>
           <ul class="list-disc pl-5">

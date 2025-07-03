@@ -8,18 +8,14 @@ import {
   Trash,
   X,
   Check,
-  Wifi,
-  Monitor,
-  Mic,
-  Users,
+  // Removed unused icons: Wifi, Monitor, Mic,
+  Users, // Keep Users for capacity display
   MapPin
 } from 'lucide-react';
 import api from '../../api';
 import Swal from 'sweetalert2';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-// Removed: import TimePicker from 'react-time-picker';
-// Removed: import 'react-time-picker/dist/TimePicker.css';
 
 const MakeBookingScreen = () => {
   const { state } = useLocation();
@@ -29,7 +25,8 @@ const MakeBookingScreen = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
-  const [timeError, setTimeError] = useState(null); // New state for time validation
+  const [timeError, setTimeError] = useState(null); // State for time validation
+  const [attendeesError, setAttendeesError] = useState(null); // NEW: State for attendees validation
 
   // Helper function to ensure valid time format (HH:MM)
   const formatTime = (timeString) => {
@@ -38,14 +35,15 @@ const MakeBookingScreen = () => {
     return `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}`;
   };
 
-  // Form state
+  // Form state - NEW: Added numberOfAttendees
   const [formData, setFormData] = useState({
     bookingDate: new Date(),
     startTime: '08:00',
     endTime: '09:00',
     purpose: '',
     requestedEquipment: [],
-    equipmentNotes: ''
+    equipmentNotes: '',
+    numberOfAttendees: 0 // NEW: Default to 0 attendees
   });
 
   // Room details
@@ -71,14 +69,18 @@ const MakeBookingScreen = () => {
             endTime: formatTime(booking.endTime),
             purpose: booking.purpose || '',
             requestedEquipment: booking.requestedEquipment || [],
-            equipmentNotes: booking.equipmentNotes || ''
+            equipmentNotes: booking.equipmentNotes || '',
+            numberOfAttendees: booking.numberOfAttendees || 0 // NEW: Populate numberOfAttendees
           });
 
           // If room data wasn't passed in state, fetch it
           if (!state?.room) {
-            const roomResponse = await api.get(`/rooms/${booking.room._id}`);
+            const roomResponse = await api.get(`/rooms/${booking.roomId._id}`); // Use booking.roomId._id
             setRoom(roomResponse.data.data);
+          } else {
+            setRoom(state.room);
           }
+          setIsEditMode(true); // Automatically enable edit mode when a bookingId is present
         } else if (state?.room) {
           // New booking with room data from state
           setRoom(state.room);
@@ -118,6 +120,18 @@ const MakeBookingScreen = () => {
     }
   }, [formData.startTime, formData.endTime]);
 
+  // NEW: Validate numberOfAttendees whenever it changes or room data loads
+  useEffect(() => {
+    if (room && formData.numberOfAttendees > room.capacity) {
+      setAttendeesError(`Number of attendees (${formData.numberOfAttendees}) cannot exceed room capacity (${room.capacity}).`);
+    } else if (formData.numberOfAttendees < 0) {
+      setAttendeesError('Number of attendees cannot be negative.');
+    }
+    else {
+      setAttendeesError(null);
+    }
+  }, [formData.numberOfAttendees, room]);
+
 
   const handleEquipmentChange = (equip, action = 'toggle') => {
     setFormData(prev => {
@@ -143,7 +157,6 @@ const MakeBookingScreen = () => {
           return { ...prev, requestedEquipment: newEquipment };
         }
       }
-
       return prev;
     });
   };
@@ -154,104 +167,127 @@ const MakeBookingScreen = () => {
     setFormData(prev => ({ ...prev, [field]: formatTime(time) }));
   };
 
- // Handle form submission
-const handleSubmit = async (e) => {
-  e.preventDefault();
+  // Handle number of attendees change
+  const handleAttendeesChange = (e) => {
+    const value = parseInt(e.target.value, 10);
+    setFormData(prev => ({ ...prev, numberOfAttendees: isNaN(value) ? '' : value }));
+  };
 
-  if (timeError) {
-    Swal.fire({
-      icon: 'error',
-      title: 'Invalid Time Range',
-      text: timeError,
-      confirmButtonText: 'OK',
-      confirmButtonColor: '#000000'
-    });
-    return;
-  }
 
-  setIsSubmitting(true);
+  // Handle form submission
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-  try {
-    // Create a new date object to avoid timezone issues
-    const bookingDate = new Date(formData.bookingDate);
-    
-    // Format the date in local timezone to avoid UTC conversion issues
-    const year = bookingDate.getFullYear();
-    const month = (bookingDate.getMonth() + 1).toString().padStart(2, '0');
-    const day = bookingDate.getDate().toString().padStart(2, '0');
-    
-    const localBookingDate = `${year}-${month}-${day}`;
-    
-    // Additional check: ensure we're not booking for a past date
-    const today = new Date();
-    const todayString = `${today.getFullYear()}-${(today.getMonth() + 1).toString().padStart(2, '0')}-${today.getDate().toString().padStart(2, '0')}`;
-    
-    // If booking for today, check if the start time has already passed
-    if (localBookingDate === todayString) {
+    if (timeError || attendeesError) { // Check both time and attendees errors
+      Swal.fire({
+        icon: 'error',
+        title: 'Validation Error',
+        text: timeError || attendeesError, // Show relevant error
+        confirmButtonText: 'OK',
+        confirmButtonColor: '#000000'
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const bookingDate = new Date(formData.bookingDate);
+
+      // Format the date in local timezone to avoid UTC conversion issues
+      const year = bookingDate.getFullYear();
+      const month = (bookingDate.getMonth() + 1).toString().padStart(2, '0');
+      const day = bookingDate.getDate().toString().padStart(2, '0');
+
+      const localBookingDate = `${year}-${month}-${day}`;
+
+      // Additional check: ensure we're not booking for a past date/time
       const now = new Date();
-      const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-      
-      if (formData.startTime <= currentTime) {
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()); // Today's date at 00:00:00
+
+      const selectedDate = new Date(bookingDate.getFullYear(), bookingDate.getMonth(), bookingDate.getDate());
+
+      if (selectedDate < today) {
         Swal.fire({
           icon: 'error',
-          title: 'Invalid Time',
-          text: 'Cannot book for a time that has already passed today',
+          title: 'Invalid Date',
+          text: 'Cannot book for a past date.',
           confirmButtonText: 'OK',
           confirmButtonColor: '#000000'
         });
         setIsSubmitting(false);
         return;
       }
-    }
 
-    const payload = {
-      ...formData,
-      bookingDate: localBookingDate,
-      startTime: formatTime(formData.startTime),
-      endTime: formatTime(formData.endTime)
-    };
+      if (selectedDate.getTime() === today.getTime()) {
+        const currentMinutes = now.getHours() * 60 + now.getMinutes();
+        const [startHour, startMinute] = formData.startTime.split(':').map(Number);
+        const startTimeInMinutes = startHour * 60 + startMinute;
 
-    let response;
+        if (startTimeInMinutes <= currentMinutes) {
+          Swal.fire({
+            icon: 'error',
+            title: 'Invalid Time',
+            text: 'Cannot book for a time that has already passed today.',
+            confirmButtonText: 'OK',
+            confirmButtonColor: '#000000'
+          });
+          setIsSubmitting(false);
+          return;
+        }
+      }
 
-    if (bookingId) {
-      // Update existing booking
-      response = await api.patch(`/bookings/${bookingId}`, payload);
+      const payload = {
+        ...formData,
+        bookingDate: localBookingDate,
+        startTime: formatTime(formData.startTime),
+        endTime: formatTime(formData.endTime),
+        // Ensure numberOfAttendees is a number, default to 0 if empty/invalid
+        numberOfAttendees: parseInt(formData.numberOfAttendees) || 0
+      };
+
+      let response;
+
+      if (bookingId) {
+        // Update existing booking
+        response = await api.patch(`/bookings/${bookingId}`, payload);
+        Swal.fire({
+          icon: 'success',
+          title: 'Booking Updated!',
+          text: 'Your booking has been successfully updated',
+          timer: 2000,
+          showConfirmButton: false
+        });
+      } else {
+        // Create new booking
+        response = await api.post(`/rooms/${room._id}/booking`, payload);
+        Swal.fire({
+          icon: 'success',
+          title: 'Booking Created!',
+          text: 'Your room has been successfully booked',
+          timer: 2000,
+          showConfirmButton: false
+        });
+      }
+
+      // Go back to previous screen after success
+      setTimeout(() => navigate(-1), 2000);
+    } catch (err) {
+      console.error('Error submitting booking:', err);
+      // Access specific error message from the backend if available
+      const errorMessage = err.response?.data?.message || err.message || 'Could not process your booking request';
+
       Swal.fire({
-        icon: 'success',
-        title: 'Booking Updated!',
-        text: 'Your booking has been successfully updated',
-        timer: 2000,
-        showConfirmButton: false
+        icon: 'error',
+        title: 'Booking Failed',
+        text: errorMessage,
+        confirmButtonText: 'OK',
+        confirmButtonColor: '#000000'
       });
-    } else {
-      // Create new booking
-      response = await api.post(`/rooms/${room._id}/booking`, payload);
-      Swal.fire({
-        icon: 'success',
-        title: 'Booking Created!',
-        text: 'Your room has been successfully booked',
-        timer: 2000,
-        showConfirmButton: false
-      });
+    } finally {
+      setIsSubmitting(false);
     }
-
-    // Go back to previous screen after success
-    setTimeout(() => navigate(-1), 2000);
-  } catch (err) {
-    console.error('Error submitting booking:', err);
-    setError(err.message || 'Failed to submit booking');
-
-    Swal.fire({
-      icon: 'error',
-      title: 'Booking Failed',
-      text: err.message || 'Could not process your booking request',
-      confirmButtonText: 'OK',
-      confirmButtonColor: '#000000'
-    });
-  } finally {
-    setIsSubmitting(false);
-  }
-};
+  };
 
   // Handle booking rejection
   const handleReject = async () => {
@@ -283,7 +319,7 @@ const handleSubmit = async (e) => {
         Swal.fire({
           icon: 'error',
           title: 'Rejection Failed',
-          text: err.message || 'Could not reject the booking',
+          text: err.response?.data?.message || err.message || 'Could not reject the booking',
           confirmButtonText: 'OK',
           confirmButtonColor: '#000000'
         });
@@ -321,7 +357,7 @@ const handleSubmit = async (e) => {
         Swal.fire({
           icon: 'error',
           title: 'Deletion Failed',
-          text: err.message || 'Could not delete the booking',
+          text: err.response?.data?.message || err.message || 'Could not delete the booking',
           confirmButtonText: 'OK',
           confirmButtonColor: '#000000'
         });
@@ -391,7 +427,7 @@ const handleSubmit = async (e) => {
             <span className="text-sm">Cancel</span>
           </button>
         ) : (
-          <div className="w-9"></div>
+          <div className="w-9"></div> // Placeholder for alignment
         )}
       </div>
 
@@ -488,7 +524,6 @@ const handleSubmit = async (e) => {
                   step="900" // 15-minute intervals
                   required
                 />
-
               </div>
             </div>
 
@@ -507,13 +542,36 @@ const handleSubmit = async (e) => {
                   step="900" // 15-minute intervals
                   required
                 />
-
               </div>
             </div>
           </div>
           {timeError && (
             <p className="text-red-500 text-sm mt-1">{timeError}</p>
           )}
+
+          {/* NEW: Number of Attendees Input */}
+          <div>
+            <label htmlFor="numberOfAttendees" className="block text-sm font-medium text-gray-700 mb-1">
+              Number of Attendees
+            </label>
+            <input
+              id="numberOfAttendees"
+              type="number"
+              value={formData.numberOfAttendees}
+              onChange={handleAttendeesChange}
+              min="0" // Allow 0 for just the user
+              max={room.capacity} // Max based on room capacity
+              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-black focus:border-black"
+              disabled={!isEditMode && !!bookingId}
+              required
+            />
+            {attendeesError && (
+              <p className="text-red-500 text-sm mt-1">{attendeesError}</p>
+            )}
+            <p className="text-xs text-gray-500 mt-1">
+              Enter the total number of people attending the meeting, including yourself. (Max: {room.capacity})
+            </p>
+          </div>
 
           {/* Purpose */}
           <div>
@@ -635,7 +693,7 @@ const handleSubmit = async (e) => {
             {(isEditMode || !bookingId) && (
               <button
                 type="submit"
-                disabled={isSubmitting || timeError}
+                disabled={isSubmitting || timeError || attendeesError} // Disable if any error exists
                 className="flex-1 bg-black text-white py-3 px-6 rounded-lg hover:bg-gray-800 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? (

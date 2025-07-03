@@ -5,10 +5,8 @@ import {
   Calendar,
   Clock,
   Edit,
-  Trash,
-  X,
   Check,
-  Users,
+  Users, // Used for attendee count icon
   MapPin
 } from 'lucide-react';
 import api from '../../api';
@@ -23,28 +21,19 @@ const EditBookingScreen = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
-  const [timeError, setTimeError] = useState(null); // New state for time validation
+  const [timeError, setTimeError] = useState(null);
 
-  // Helper function to ensure valid time format (HH:MM)
-  const formatTime = (timeString) => {
-    if (!timeString) return '08:00';
-    // Ensure it's a string before splitting, and handle potential non-string values from TimePicker if it was used before
-    const timeStr = typeof timeString === 'string' ? timeString : '08:00';
-    const [hours, minutes] = timeStr.split(':');
-    return `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}`;
-  };
-
-  // Form state
+  // Form state - attendees is now a number
   const [formData, setFormData] = useState({
     bookingDate: new Date(),
     startTime: '08:00',
     endTime: '09:00',
     purpose: '',
     requestedEquipment: [],
-    equipmentNotes: ''
+    equipmentNotes: '',
+    numberOfAttendees: 0 // Changed to a number
   });
 
-  // Room details
   const [room, setRoom] = useState(null);
   const [booking, setBooking] = useState(null);
 
@@ -58,7 +47,6 @@ const EditBookingScreen = () => {
           return;
         }
 
-        // 1. Fetch booking
         const bookingResponse = await api.get(`/bookings/${bookingId}`);
         let bookingData = null;
 
@@ -76,21 +64,20 @@ const EditBookingScreen = () => {
 
         setBooking(bookingData);
 
-        // 2. Get room data from the populated roomId field
-        const roomData = bookingData.roomId; // Assuming roomId is populated
+        const roomData = bookingData.roomId;
         if (!roomData) {
           throw new Error('Room information not found in booking data');
         }
         setRoom(roomData);
 
-        // 3. Set form data with initial values
         setFormData({
           bookingDate: bookingData.bookingDate ? new Date(bookingData.bookingDate) : new Date(),
-          startTime: formatTime(bookingData.startTime),
-          endTime: formatTime(bookingData.endTime),
+          startTime: bookingData.startTime || '08:00',
+          endTime: bookingData.endTime || '09:00',
           purpose: bookingData.purpose || '',
           requestedEquipment: Array.isArray(bookingData.requestedEquipment) ? bookingData.requestedEquipment : [],
-          equipmentNotes: bookingData.equipmentNotes || ''
+          equipmentNotes: bookingData.equipmentNotes || '',
+          numberOfAttendees: bookingData.numberOfAttendees || 0 // Initialize from the numerical field
         });
 
       } catch (err) {
@@ -115,7 +102,6 @@ const EditBookingScreen = () => {
     fetchData();
   }, [bookingId, navigate]);
 
-  // Validate time range whenever startTime or endTime changes
   useEffect(() => {
     const start = new Date(`2000/01/01 ${formData.startTime}`);
     const end = new Date(`2000/01/01 ${formData.endTime}`);
@@ -127,13 +113,10 @@ const EditBookingScreen = () => {
     }
   }, [formData.startTime, formData.endTime]);
 
-  // Handle time change using standard input type="time"
   const handleTimeChange = (field, e) => {
-    const time = e.target.value;
-    setFormData(prev => ({ ...prev, [field]: formatTime(time) }));
+    setFormData(prev => ({ ...prev, [field]: e.target.value }));
   };
 
-  // Handle equipment selection and quantity change
   const handleEquipmentChange = (equip, action = 'toggle', newQuantity = 1) => {
     setFormData(prev => {
       const existingIndex = prev.requestedEquipment.findIndex(e => e.name === (equip.equipment?.name || equip.name));
@@ -141,17 +124,15 @@ const EditBookingScreen = () => {
 
       if (action === 'toggle') {
         if (existingIndex >= 0) {
-          // Remove if already selected
           const newEquipment = [...prev.requestedEquipment];
           newEquipment.splice(existingIndex, 1);
           return { ...prev, requestedEquipment: newEquipment };
         } else {
-          // Add to selection with quantity 1
           return {
             ...prev,
             requestedEquipment: [...prev.requestedEquipment, {
               name: equipName,
-              quantity: equip.quantity, // This is the total available quantity from the room
+              quantity: equip.quantity,
               requestedQuantity: 1
             }]
           };
@@ -173,28 +154,27 @@ const EditBookingScreen = () => {
     });
   };
 
-  // Validate form data
   const validateForm = () => {
     if (timeError) {
       return timeError;
     }
-
-    // Check if purpose is provided
     if (!formData.purpose.trim()) {
       return 'Please provide a purpose for the booking';
     }
-
-    // Check if booking date is in the past
     const today = new Date();
-    today.setHours(0, 0, 0, 0); // Reset to beginning of day for date comparison
+    today.setHours(0, 0, 0, 0);
     if (formData.bookingDate.setHours(0, 0, 0, 0) < today.getTime()) {
       return 'Booking date cannot be in the past.';
     }
-
+    if (formData.numberOfAttendees < 0) {
+        return 'Number of attendees cannot be negative.';
+    }
+    if (formData.numberOfAttendees > (room?.capacity || Infinity)) {
+        return `Number of attendees (${formData.numberOfAttendees}) exceeds room capacity (${room?.capacity || 'N/A'}).`;
+    }
     return null;
   };
 
-  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -212,19 +192,17 @@ const EditBookingScreen = () => {
     setIsSubmitting(true);
 
     try {
-      // Get year, month, and day from the local date
       const year = formData.bookingDate.getFullYear();
-      const month = (formData.bookingDate.getMonth() + 1).toString().padStart(2, '0'); // Months are 0-indexed
+      const month = (formData.bookingDate.getMonth() + 1).toString().padStart(2, '0');
       const day = formData.bookingDate.getDate().toString().padStart(2, '0');
-
       const localBookingDate = `${year}-${month}-${day}`;
 
       const payload = {
         ...formData,
-        bookingDate: localBookingDate, // Use the locally formatted date string
-        startTime: formatTime(formData.startTime),
-        endTime: formatTime(formData.endTime),
-        // Send only requestedQuantity for each equipment
+        bookingDate: localBookingDate,
+        startTime: formData.startTime,
+        endTime: formData.endTime,
+        numberOfAttendees: Number(formData.numberOfAttendees), // Ensure it's a number
         requestedEquipment: formData.requestedEquipment.map(item => ({
           name: item.name,
           requestedQuantity: item.requestedQuantity
@@ -241,8 +219,7 @@ const EditBookingScreen = () => {
         showConfirmButton: false
       });
 
-      // Redirect to user-bookings after success
-      setTimeout(() => navigate(`/user-bookings`), 2000); // MODIFIED THIS LINE
+      setTimeout(() => navigate(`/user-bookings`), 2000);
     } catch (err) {
       console.error('Error updating booking:', err);
       setError(err.response?.data?.message || err.message || 'Failed to update booking');
@@ -302,13 +279,7 @@ const EditBookingScreen = () => {
 
         <h1 className="text-lg font-semibold">Edit Booking</h1>
 
-        <button
-          onClick={() => navigate(`/bookings/${bookingId}`)}
-          className="flex items-center space-x-1 text-gray-600 hover:text-black"
-        >
-          <X className="w-4 h-4" />
-          <span className="text-sm">Cancel</span>
-        </button>
+        <div className="w-12"></div> {/* Placeholder to keep title centered */}
       </div>
 
       {/* Main Content */}
@@ -432,6 +403,35 @@ const EditBookingScreen = () => {
               placeholder="Briefly describe the purpose of your booking..."
               required
             />
+          </div>
+
+          {/* Number of Attendees */}
+          <div>
+            <label htmlFor="numberOfAttendees" className="block text-sm font-medium text-gray-700 mb-1">
+              Number of Attendees
+            </label>
+            <div className="relative">
+              <input
+                type="number"
+                id="numberOfAttendees"
+                value={formData.numberOfAttendees}
+                onChange={(e) => setFormData({ ...formData, numberOfAttendees: parseInt(e.target.value) || 0 })}
+                min="0"
+                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-black focus:border-black"
+                placeholder="e.g., 10"
+              />
+              <Users className="absolute right-3 top-3 text-gray-400 pointer-events-none" />
+            </div>
+            {formData.numberOfAttendees > (room?.capacity || Infinity) && (
+                <p className="text-red-500 text-sm mt-1">
+                    Number of attendees ({formData.numberOfAttendees}) exceeds room capacity ({room?.capacity || 'N/A'}).
+                </p>
+            )}
+            {formData.numberOfAttendees < 0 && (
+                <p className="text-red-500 text-sm mt-1">
+                    Number of attendees cannot be negative.
+                </p>
+            )}
           </div>
 
           {/* Equipment Selection */}
