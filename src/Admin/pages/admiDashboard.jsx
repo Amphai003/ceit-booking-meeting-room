@@ -1,4 +1,4 @@
-import React, { useState, useEffect,  } from 'react';
+import React, { useState, useEffect } from 'react';
 import Dashboard from '../component/admin_dashboard_component/dashboard';
 // import RoomsManagement from '../component/admin_dashboard_component/roomManagement';
 import SettingsPanel from '../component/admin_dashboard_component/setting';
@@ -7,7 +7,6 @@ import Header from '../component/admin_dashboard_component/header';
 import api from '../../api';
 
 import { useNavigate } from 'react-router-dom';
-
 
 const MeetingRoomDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -30,7 +29,8 @@ const MeetingRoomDashboard = () => {
           name: room.name,
           capacity: room.capacity,
           status: room.status,
-          equipment: room.equipment.map(eq => `${eq.name} (${eq.quantity})`),
+          // equipment: room.equipment.map(eq => `${eq.name} (${eq.quantity})`),
+          equipment: room.equipment,
           location: room.location,
           photo: room.photo,
           note: room.note,
@@ -41,16 +41,30 @@ const MeetingRoomDashboard = () => {
 
         // Fetch bookings data
         const bookingsResponse = await api.get('/bookings?limit=10');
-        const bookingsData = bookingsResponse.data.data.map(booking => ({
-          id: booking._id,
-          title: booking.purpose,
-          room: booking.roomId.name,
-          time: `${booking.startTime} - ${booking.endTime}`,
-          attendees: booking.requestedEquipment.length, // Or another attendee count if available
-          status: booking.status,
-          bookingDate: booking.bookingDate
-        }));
-        setUpcomingMeetings(bookingsData);
+        const now = new Date();
+
+        const filteredBookingsData = bookingsResponse.data.data
+          .filter(booking => {
+            const bookingDateTime = new Date(`${booking.bookingDate.split('T')[0]}T${booking.startTime}:00`);
+            return booking.status !== 'history' && bookingDateTime >= now;
+          })
+          .sort((a, b) => {
+            const dateA = new Date(`${a.bookingDate.split('T')[0]}T${a.startTime}:00`);
+            const dateB = new Date(`${b.bookingDate.split('T')[0]}T${b.startTime}:00`);
+            return dateA - dateB;
+          })
+          .slice(0, 3)
+          .map(booking => ({
+            id: booking._id,
+            title: booking.purpose,
+            room: booking.roomId.name,
+            time: `${booking.startTime} - ${booking.endTime}`,
+            // IMPORTANT: Use 'numberOfAttendees' here to match the API and the UpcomingMeetings component
+            numberOfAttendees: booking.numberOfAttendees,
+            status: booking.status,
+            bookingDate: booking.bookingDate
+          }));
+        setUpcomingMeetings(filteredBookingsData);
 
         setLoading(false);
       } catch (err) {
@@ -69,6 +83,7 @@ const MeetingRoomDashboard = () => {
       case 'occupied': return 'bg-red-100 text-red-800';
       case 'maintenance': return 'bg-yellow-100 text-yellow-800';
       case 'pending': return 'bg-blue-100 text-blue-800';
+      case 'confirmed': return 'bg-purple-100 text-purple-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -79,6 +94,7 @@ const MeetingRoomDashboard = () => {
       case 'occupied': return '🔴';
       case 'maintenance': return '🟡';
       case 'pending': return '🟣';
+      case 'confirmed': return '✅';
       default: return '⚪';
     }
   };
@@ -97,19 +113,35 @@ const MeetingRoomDashboard = () => {
         name: room.name,
         capacity: room.capacity,
         status: room.status,
-        equipment: room.equipment.map(eq => `${eq.name} (${eq.quantity})`),
+        // equipment: room.equipment.map(eq => `${eq.name} (${eq.quantity})`),
+        equipment: room.equipment,
         location: room.location,
         photo: room.photo
       })));
 
-      setUpcomingMeetings(bookingsRes.data.data.map(booking => ({
-        id: booking._id,
-        title: booking.purpose,
-        room: booking.roomId.name,
-        time: `${booking.startTime} - ${booking.endTime}`,
-        attendees: booking.requestedEquipment.length,
-        status: booking.status
-      })));
+      const now = new Date();
+      const filteredBookingsData = bookingsRes.data.data
+        .filter(booking => {
+          const bookingDateTime = new Date(`${booking.bookingDate.split('T')[0]}T${booking.startTime}:00`);
+          return booking.status !== 'history' && bookingDateTime >= now;
+        })
+        .sort((a, b) => {
+          const dateA = new Date(`${a.bookingDate.split('T')[0]}T${a.startTime}:00`);
+          const dateB = new Date(`${b.bookingDate.split('T')[0]}T${b.startTime}:00`);
+          return dateA - dateB;
+        })
+        .slice(0, 3)
+        .map(booking => ({
+          id: booking._id,
+          title: booking.purpose,
+          room: booking.roomId.name,
+          time: `${booking.startTime} - ${booking.endTime}`,
+          // IMPORTANT: Use 'numberOfAttendees' here to match the API and the UpcomingMeetings component
+          numberOfAttendees: booking.numberOfAttendees,
+          status: booking.status
+        }));
+      setUpcomingMeetings(filteredBookingsData);
+
     } catch (err) {
       setError(err.message || 'Failed to refresh data');
     } finally {
@@ -140,6 +172,27 @@ const MeetingRoomDashboard = () => {
       );
     }
 
+    // PlaceholderContent component (assuming it's defined elsewhere or will be defined)
+    const PlaceholderContent = ({ title, message }) => (
+      <div className="flex flex-col items-center justify-center h-full p-4 bg-white rounded-lg shadow-md">
+        <h2 className="text-2xl font-semibold text-gray-700 mb-2">{title}</h2>
+        <p className="text-gray-500">{message}</p>
+      </div>
+    );
+
+    // Conditionally import RoomsManagement to avoid "not defined" error if it's not used
+    let RoomsManagement;
+    try {
+      RoomsManagement = require('../component/admin_dashboard_component/roomManagement').default;
+    } catch (e) {
+      console.warn("RoomsManagement component not found or could not be loaded.");
+      // Define a fallback if RoomsManagement is truly optional and might not exist
+      RoomsManagement = ({ rooms, getStatusColor, refreshData }) => (
+        <PlaceholderContent title="Rooms Management" message="Room management features coming soon..." />
+      );
+    }
+
+
     switch (activeTab) {
       case 'dashboard':
         return (
@@ -149,7 +202,7 @@ const MeetingRoomDashboard = () => {
             getStatusColor={getStatusColor}
             getStatusIcon={getStatusIcon}
             refreshData={refreshData}
-             navigate={navigate} 
+            navigate={navigate}
           />
         );
       case 'rooms':
@@ -168,7 +221,7 @@ const MeetingRoomDashboard = () => {
             getStatusColor={getStatusColor}
             getStatusIcon={getStatusIcon}
             refreshData={refreshData}
-            navigate={navigate}  // Pass navigate function
+            navigate={navigate}
           />
         );
     }

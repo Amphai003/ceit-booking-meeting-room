@@ -26,13 +26,14 @@ const UserHomeScreen = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [favoriteLoading, setFavoriteLoading] = useState({}); // Track loading state for individual rooms
   const roomsPerPage = 6;
 
   const fetchRooms = async () => {
     try {
       setLoading(true);
       const response = await api.get('/rooms');
-      
+
       let roomsData = [];
       if (response && response.data && response.data.data) {
         roomsData = response.data.data;
@@ -41,10 +42,10 @@ const UserHomeScreen = () => {
       } else if (response && Array.isArray(response.rooms)) {
         roomsData = response.rooms;
       }
-      
+
       setRooms(roomsData);
       setError(null);
-      
+
       if (roomsData && roomsData.length > 0) {
         Swal.fire({
           icon: 'success',
@@ -60,13 +61,13 @@ const UserHomeScreen = () => {
     } catch (err) {
       setError(err.message || 'Failed to fetch rooms');
       console.error('Error fetching rooms:', err);
-      
+
       Swal.fire({
         icon: 'error',
         title: 'Failed to Load Rooms',
         text: err.message || 'Unable to fetch rooms from server',
         confirmButtonText: 'Try Again',
-        confirmButtonColor: '#000000'
+        confirmButtonColor: '#2563EB' // Changed from #000000 to blue
       }).then((result) => {
         if (result.isConfirmed) {
           fetchRooms();
@@ -101,43 +102,69 @@ const UserHomeScreen = () => {
     setCurrentPage(prev => Math.min(prev + 1, totalPages));
   };
 
-  const toggleFavorite = (room, e) => {
+  const toggleFavorite = async (room, e) => {
     e.stopPropagation(); // Prevent triggering the room click
-    const newFavoriteStatus = !room.isFavorite;
-    
-    Swal.fire({
-      title: newFavoriteStatus ? 'Add to Favorites?' : 'Remove from Favorites?',
-      text: newFavoriteStatus 
-        ? `Add "${room.name}" to your favorites?` 
-        : `Remove "${room.name}" from your favorites?`,
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonColor: '#000000',
-      cancelButtonColor: '#6B7280',
-      confirmButtonText: newFavoriteStatus ? 'Yes, add it!' : 'Yes, remove it!',
-      cancelButtonText: 'Cancel'
-    }).then((result) => {
-      if (result.isConfirmed) {
-        setRooms(prevRooms => 
-          prevRooms.map(r => 
-            (r.id || r._id) === (room.id || room._id)
-              ? { ...r, isFavorite: newFavoriteStatus }
-              : r
-          )
-        );
 
-        Swal.fire({
-          icon: 'success',
-          title: newFavoriteStatus ? 'Added to Favorites!' : 'Removed from Favorites!',
-          text: `"${room.name}" has been ${newFavoriteStatus ? 'added to' : 'removed from'} your favorites`,
-          timer: 2000,
-          timerProgressBar: true,
-          showConfirmButton: false,
-          toast: true,
-          position: 'top-end'
+    const roomId = room.id || room._id;
+    const newFavoriteStatus = !room.isFavorite;
+
+    // Set loading state for this specific room
+    setFavoriteLoading(prev => ({ ...prev, [roomId]: true }));
+
+    try {
+      if (newFavoriteStatus) {
+        // Add to favorites
+        await api.post('/favorite-rooms', {
+          roomId: roomId
+        });
+      } else {
+        // Remove from favorites
+        await api.delete('/favorite-rooms', {
+          data: {
+            roomId: roomId
+          }
         });
       }
-    });
+
+      // Update the room's favorite status in the local state
+      setRooms(prevRooms =>
+        prevRooms.map(r =>
+          (r.id || r._id) === roomId
+            ? { ...r, isFavorite: newFavoriteStatus }
+            : r
+        )
+      );
+
+      // Show success message
+      Swal.fire({
+        icon: 'success',
+        title: newFavoriteStatus ? 'Added to Favorites!' : 'Removed from Favorites!',
+        text: `"${room.name}" has been ${newFavoriteStatus ? 'added to' : 'removed from'} your favorites`,
+        timer: 2000,
+        timerProgressBar: true,
+        showConfirmButton: false,
+        toast: true,
+        position: 'top-end'
+      });
+
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+
+      // Show error message
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: `Failed to ${newFavoriteStatus ? 'add to' : 'remove from'} favorites. Please try again.`,
+        confirmButtonColor: '#2563EB' // Changed from #000000 to blue
+      });
+    } finally {
+      // Remove loading state for this room
+      setFavoriteLoading(prev => {
+        const newState = { ...prev };
+        delete newState[roomId];
+        return newState;
+      });
+    }
   };
 
   const handleRoomClick = (room) => {
@@ -148,7 +175,7 @@ const UserHomeScreen = () => {
         icon: 'info',
         title: 'Room Not Available',
         text: 'This room is currently not available for booking',
-        confirmButtonColor: '#000000'
+        confirmButtonColor: '#2563EB' // Changed from #000000 to blue
       });
     }
   };
@@ -179,35 +206,24 @@ const UserHomeScreen = () => {
     }
   };
 
-  const renderEquipment = (equipment) => {
-    if (!equipment || equipment.length === 0) return null;
-    
-    const getEquipmentIcon = (name) => {
-      const lowerName = name.toLowerCase();
-      if (lowerName.includes('tv') || lowerName.includes('monitor') || lowerName.includes('projector')) {
-        return <Monitor className="w-3 h-3" />;
-      } else if (lowerName.includes('mic') || lowerName.includes('microphone')) {
-        return <Mic className="w-3 h-3" />;
-      } else if (lowerName.includes('wifi')) {
-        return <Wifi className="w-3 h-3" />;
-      } else {
-        return <div className="w-3 h-3 bg-gray-400 rounded-full" />;
-      }
-    };
-    
-    return equipment.slice(0, 4).map((item, index) => (
-      <div key={item._id || index} className="flex items-center space-x-1 text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded-full">
-        {getEquipmentIcon(item.name)}
-        <span>{item.name} ({item.quantity})</span>
-      </div>
-    ));
+  const getEquipmentIcon = (name) => {
+    const lowerName = (name || '').toLowerCase(); // Add fallback for undefined name
+    if (lowerName.includes('tv') || lowerName.includes('monitor') || lowerName.includes('projector')) {
+      return <Monitor className="w-3 h-3" />;
+    } else if (lowerName.includes('mic') || lowerName.includes('microphone')) {
+      return <Mic className="w-3 h-3" />;
+    } else if (lowerName.includes('wifi')) {
+      return <Wifi className="w-3 h-3" />;
+    } else {
+      return <div className="w-3 h-3 bg-gray-400 rounded-full" />;
+    }
   };
 
   if (loading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div> {/* Changed to blue-500 */}
           <p className="text-gray-600">Loading rooms...</p>
         </div>
       </div>
@@ -221,14 +237,14 @@ const UserHomeScreen = () => {
           <div className="text-red-600 text-6xl mb-4">⚠️</div>
           <p className="text-red-600 mb-4 text-lg">Error loading rooms</p>
           <p className="text-gray-600 mb-6">{error}</p>
-          <button 
+          <button
             onClick={() => {
               Swal.fire({
                 title: 'Retry Loading Rooms?',
                 text: 'This will attempt to fetch rooms from the server again.',
                 icon: 'question',
                 showCancelButton: true,
-                confirmButtonColor: '#000000',
+                confirmButtonColor: '#2563EB', // Changed to blue
                 cancelButtonColor: '#6B7280',
                 confirmButtonText: 'Yes, retry!',
                 cancelButtonText: 'Cancel'
@@ -238,7 +254,7 @@ const UserHomeScreen = () => {
                 }
               });
             }}
-            className="bg-black text-white px-6 py-3 rounded-lg hover:bg-gray-800 transition-colors"
+            className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors" // Changed to blue
           >
             Try Again
           </button>
@@ -260,7 +276,7 @@ const UserHomeScreen = () => {
               className="flex-1 bg-transparent text-gray-600 placeholder-gray-400 outline-none"
             />
           </div>
-          <button className="absolute right-2 top-2 bg-black text-white rounded-full px-4 py-2 flex items-center space-x-1">
+          <button className="absolute right-2 top-2 bg-blue-600 text-white rounded-full px-4 py-2 flex items-center space-x-1 hover:bg-blue-700"> {/* Changed to blue */}
             <SlidersHorizontal className="w-4 h-4" />
             <span className="text-sm">Filter</span>
           </button>
@@ -277,11 +293,10 @@ const UserHomeScreen = () => {
                 setActiveTab(tab);
                 setCurrentPage(1);
               }}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                activeTab === tab
-                  ? 'bg-black text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${activeTab === tab
+                ? 'bg-blue-600 text-white hover:bg-blue-700' // Changed to blue
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
             >
               {tab}
             </button>
@@ -296,8 +311,8 @@ const UserHomeScreen = () => {
             <div className="text-gray-400 text-6xl mb-4">🏢</div>
             <p className="text-gray-500 text-lg mb-2">No rooms found</p>
             <p className="text-gray-400 text-sm">
-              {activeTab === 'Available room' 
-                ? 'No available rooms at the moment' 
+              {activeTab === 'Available room'
+                ? 'No available rooms at the moment'
                 : 'No rooms to display'}
             </p>
             <button
@@ -307,7 +322,7 @@ const UserHomeScreen = () => {
                   text: 'This will reload all rooms from the server.',
                   icon: 'question',
                   showCancelButton: true,
-                  confirmButtonColor: '#000000',
+                  confirmButtonColor: '#2563EB', // Changed to blue
                   cancelButtonColor: '#6B7280',
                   confirmButtonText: 'Yes, refresh!',
                   cancelButtonText: 'Cancel'
@@ -324,89 +339,108 @@ const UserHomeScreen = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-            {currentRooms.map((room) => (
-              <div 
-                key={room.id || room._id} 
-                className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
-                onClick={() => handleRoomClick(room)}
-              >
-                <div className="relative h-48 bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
-                  {room.photo ? (
-                    <img 
-                      src={room.photo} 
-                      alt={room.name}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                      }}
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <div className="text-4xl font-bold text-gray-600">
-                        {room.name ? room.name.substring(0, 2).toUpperCase() : 'RM'}
+            {currentRooms.map((room) => {
+              const roomId = room.id || room._id;
+              const isLoading = favoriteLoading[roomId];
+
+              return (
+                <div
+                  key={roomId}
+                  className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+                  onClick={() => handleRoomClick(room)}
+                >
+                  <div className="relative h-48 bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
+                    {room.photo ? (
+                      <img
+                        src={room.photo}
+                        alt={room.name}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                        }}
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <div className="text-4xl font-bold text-gray-600">
+                          {room.name ? room.name.substring(0, 2).toUpperCase() : 'RM'}
+                        </div>
+                      </div>
+                    )}
+                    <button
+                      onClick={(e) => toggleFavorite(room, e)}
+                      disabled={isLoading}
+                      className={`absolute top-3 right-3 p-2 rounded-full transition-colors backdrop-blur-sm ${isLoading
+                        ? 'bg-gray-300/50 cursor-not-allowed'
+                        : 'hover:bg-white/20 bg-blue-600/20' // Changed to blue
+                        }`}
+                    >
+                      {isLoading ? (
+                        <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <Heart
+                          className={`w-5 h-5 ${room.isFavorite
+                            ? 'fill-red-500 text-red-500'
+                            : 'text-gray-400 hover:text-red-500'
+                            }`}
+                        />
+                      )}
+                    </button>
+                  </div>
+
+                  <div className="p-4">
+                    <div className="flex items-start justify-between mb-2">
+                      <h3 className="font-semibold text-lg truncate">{room.name || 'Unnamed Room'}</h3>
+                      <div className={`flex items-center space-x-1 mb-3`}>
+                        <div className={`w-2 h-2 rounded-full ${getStatusColor(room.status).split(' ')[1]}`}></div>
+                        <span className={`text-sm ${getStatusColor(room.status).split(' ')[0]}`}>
+                          {getStatusText(room.status)}
+                        </span>
+                      </div>
+
+                    </div>
+
+                    <div className="flex items-center space-x-2 text-sm text-gray-600 mb-2">
+                      <span>{room.roomType || 'Room'}</span>
+                      <span>•</span>
+                      <div className="flex items-center space-x-1">
+                        <MapPin className="w-3 h-3" />
+                        <span>{room.location || 'Location'}</span>
                       </div>
                     </div>
-                  )}
-                  <button
-                    onClick={(e) => toggleFavorite(room, e)}
-                    className="absolute top-3 right-3 p-2 hover:bg-white/20 rounded-full transition-colors backdrop-blur-sm bg-black/20"
-                  >
-                    <Heart
-                      className={`w-5 h-5 ${
-                        room.isFavorite 
-                          ? 'fill-red-500 text-red-500' 
-                          : 'text-gray-400 hover:text-red-500'
-                      }`}
-                    />
-                  </button>
+
+                    <div className="flex items-center space-x-2 mb-3">
+                      <div className="flex items-center space-x-1">
+                        <Users className="w-4 h-4 text-gray-500" />
+                        <span className="text-sm text-gray-600">{room.capacity || 0} people</span>
+                      </div>
+                    </div>
+
+                    <div className="text-gray-600">
+
+                      {room.equipment?.length > 0 && (
+                        <div>
+                          Equipment: {room.equipment.map((item, index) => {
+                            const name = item.equipment?.name || 'Unknown';
+                            return (
+                              <span key={`eq-${index}`}>
+                                {index > 0 && ', '}
+                                {name} ({item.quantity})
+                              </span>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+
+                    {room.note && (
+                      <p className="text-sm text-gray-600 leading-relaxed line-clamp-2">
+                        Note: {room.note}
+                      </p>
+                    )}
+                  </div>
                 </div>
-
-                <div className="p-4">
-                  <div className="flex items-start justify-between mb-2">
-                    <h3 className="font-semibold text-lg truncate">{room.name || 'Unnamed Room'}</h3>
-                    <div className="flex items-center space-x-1">
-                      <span className="text-yellow-400">★</span>
-                      <span className="text-sm text-gray-600">4.5</span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center space-x-2 text-sm text-gray-600 mb-2">
-                    <span>{room.roomType || 'Room'}</span>
-                    <span>•</span>
-                    <div className="flex items-center space-x-1">
-                      <MapPin className="w-3 h-3" />
-                      <span>{room.location || 'Location'}</span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center space-x-2 mb-3">
-                    <div className="flex items-center space-x-1">
-                      <Users className="w-4 h-4 text-gray-500" />
-                      <span className="text-sm text-gray-600">{room.capacity || 0} people</span>
-                    </div>
-                  </div>
-
-                  <div className={`flex items-center space-x-1 mb-3`}>
-                    <div className={`w-2 h-2 rounded-full ${getStatusColor(room.status).split(' ')[1]}`}></div>
-                    <span className={`text-sm ${getStatusColor(room.status).split(' ')[0]}`}>
-                      {getStatusText(room.status)}
-                    </span>
-                  </div>
-
-                  {room.equipment && room.equipment.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mb-3">
-                      {renderEquipment(room.equipment)}
-                    </div>
-                  )}
-
-                  {room.note && (
-                    <p className="text-sm text-gray-600 leading-relaxed line-clamp-2">
-                      {room.note}
-                    </p>
-                  )}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
@@ -416,11 +450,10 @@ const UserHomeScreen = () => {
             <button
               onClick={goToPreviousPage}
               disabled={currentPage === 1}
-              className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
-                currentPage === 1
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
+              className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${currentPage === 1
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
             >
               <ChevronLeft className="w-4 h-4" />
               <span>Previous</span>
@@ -431,11 +464,10 @@ const UserHomeScreen = () => {
                 <button
                   key={pageNum}
                   onClick={() => setCurrentPage(pageNum)}
-                  className={`w-10 h-10 rounded-lg transition-colors ${
-                    currentPage === pageNum
-                      ? 'bg-black text-white'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  }`}
+                  className={`w-10 h-10 rounded-lg transition-colors ${currentPage === pageNum
+                    ? 'bg-blue-600 text-white hover:bg-blue-700' // Changed to blue
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
                 >
                   {pageNum}
                 </button>
@@ -445,11 +477,10 @@ const UserHomeScreen = () => {
             <button
               onClick={goToNextPage}
               disabled={currentPage === totalPages}
-              className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
-                currentPage === totalPages
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
+              className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${currentPage === totalPages
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
             >
               <span>Next</span>
               <ChevronRight className="w-4 h-4" />

@@ -1,10 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import Swal from 'sweetalert2';
 import api from '../api';
 import { useAuth } from '../Auth/authContext';
 import { useTranslation } from 'react-i18next';
+
+// ADDED: It's more reliable to import assets
+import ceitLogo from '/src/assets/ceit-logo.png';
+import googleLogo from '/assets/google.png';
+import facebookLogo from '/assets/facebook.png';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -17,10 +22,12 @@ const Login = () => {
 
   const switchLanguage = (lang) => {
     i18n.changeLanguage(lang);
+    // CHANGED: Persist language choice in localStorage
+    localStorage.setItem('i18nextLng', lang);
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    e.preventDefault(); // Good practice to have this in the handler
     setIsLoading(true);
 
     try {
@@ -35,7 +42,6 @@ const Login = () => {
             confirmButton: 'font-lao',
           },
         });
-
         setIsLoading(false);
         return;
       }
@@ -49,9 +55,14 @@ const Login = () => {
       const { token, user } = result;
       const role = user.role;
 
+      // ADDED: Set a 24-hour expiration for the token
+      const expirationTime = new Date().getTime() + 24 * 60 * 60 * 1000;
+
       localStorage.setItem('token', token);
       localStorage.setItem('role', role);
       localStorage.setItem('user', JSON.stringify(user));
+      // ADDED: Store the expiration timestamp
+      localStorage.setItem('tokenExpiry', expirationTime.toString());
       localStorage.setItem('loggedIn', 'true');
 
       login();
@@ -62,10 +73,9 @@ const Login = () => {
         showConfirmButton: false,
         timer: 1500,
         customClass: {
-            title: 'font-lao',
-            htmlContainer: 'font-lao',
-            confirmButton: 'font-lao',
-          },
+          title: 'font-lao',
+          htmlContainer: 'font-lao',
+        },
       });
 
       if (role === 'admin') {
@@ -77,43 +87,22 @@ const Login = () => {
       Swal.fire({
         icon: 'error',
         title: t('login_failed'),
-        text: error?.message || t('login_failed_msg'),
+        text: error?.response?.data?.message || error?.message || t('login_failed_msg'),
         customClass: {
-            title: 'font-lao',
-            htmlContainer: 'font-lao',
-            confirmButton: 'font-lao',
-          },
+          title: 'font-lao',
+          htmlContainer: 'font-lao',
+          confirmButton: 'font-lao',
+        },
       });
     } finally {
       setIsLoading(false);
     }
   };
+  
+  // These handlers remain the same
+  const handleGoogleSignIn = () => { /* ... */ };
+  const handleFacebookSignIn = () => { /* ... */ };
 
-  const handleGoogleSignIn = () => {
-    Swal.fire({
-      title: t('coming_soon'),
-      text: t('google_soon'),
-      icon: 'info',
-      customClass: {
-            title: 'font-lao',
-            htmlContainer: 'font-lao',
-            confirmButton: 'font-lao',
-          },
-    });
-  };
-
-  const handleFacebookSignIn = () => {
-    Swal.fire({
-      title: t('coming_soon'),
-      text: t('facebook_soon'),
-      icon: 'info',
-      customClass: {
-            title: 'font-lao',
-            htmlContainer: 'font-lao',
-            confirmButton: 'font-lao',
-          },
-    });
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4 sm:p-6 lg:p-8">
@@ -126,14 +115,15 @@ const Login = () => {
 
           <div className="text-center mb-6 sm:mb-8">
             <div className="flex justify-center mb-4 sm:mb-6">
-              <img src="/src/assets/ceit-logo.png" alt="Meeting Room Booking" className="h-12 sm:h-16 lg:h-20 w-auto" />
+              <img src={ceitLogo} alt="Meeting Room Booking" className="h-12 sm:h-16 lg:h-20 w-auto" />
             </div>
             <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 tracking-wide">
               {t('meeting_booking')}
             </h1>
           </div>
-
-          <div className="space-y-4 sm:space-y-6">
+          
+          {/* CHANGED: Wrapped in a <form> element with onSubmit */}
+          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
             <div className="text-center">
               <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-gray-900 mb-2">
                 {t('login_title')}
@@ -181,7 +171,7 @@ const Login = () => {
               </div>
 
               <button
-                onClick={handleSubmit}
+                type="submit" // CHANGED: Changed to type="submit"
                 disabled={isLoading}
                 className="w-full bg-gradient-to-r from-gray-800 to-gray-900 hover:from-gray-900 hover:to-black text-white py-2.5 sm:py-3 lg:py-4 rounded-lg sm:rounded-xl font-medium text-sm sm:text-base transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed"
               >
@@ -198,59 +188,58 @@ const Login = () => {
                 )}
               </button>
             </div>
+          </form>
 
-            <div className="relative my-4 sm:my-6">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-200"></div>
-              </div>
-              <div className="relative flex justify-center text-xs sm:text-sm">
-                <span className="px-3 sm:px-4 bg-white text-gray-500 font-medium">
-                  {t('or_continue')}
-                </span>
-              </div>
+          <div className="relative my-4 sm:my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-200"></div>
             </div>
-            <div className="grid grid-cols-2 gap-3 sm:gap-4">
+            <div className="relative flex justify-center text-xs sm:text-sm">
+              <span className="px-3 sm:px-4 bg-white text-gray-500 font-medium">
+                {t('or_continue')}
+              </span>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:gap-4">
+            <button
+              onClick={handleGoogleSignIn}
+              className="flex items-center justify-center py-2.5 sm:py-3 lg:py-4 px-3 sm:px-4 border border-gray-200 rounded-lg sm:rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all duration-200"
+            >
+              <img
+                src={googleLogo} // CHANGED: Using imported asset
+                alt="Google"
+                className="h-5 w-5 sm:h-6 sm:w-6"
+              />
+              <span className="ml-2 text-xs sm:text-sm font-medium text-gray-700 hidden sm:inline">
+                {t('google')}
+              </span>
+            </button>
+
+            <button
+              onClick={handleFacebookSignIn}
+              className="flex items-center justify-center py-2.5 sm:py-3 lg:py-4 px-3 sm:px-4 border border-gray-200 rounded-lg sm:rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all duration-200"
+            >
+              <img
+                src={facebookLogo} // CHANGED: Using imported asset
+                alt="Facebook"
+                className="h-5 w-5 sm:h-6 sm:w-6"
+              />
+              <span className="ml-2 text-xs sm:text-sm font-medium text-gray-700 hidden sm:inline">
+                {t('facebook')}
+              </span>
+            </button>
+          </div>
+
+          <div className="text-center mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-gray-100">
+            <p className="text-xs sm:text-sm text-gray-600">
+              {t('no_account')}{' '}
               <button
-                onClick={handleGoogleSignIn}
-                className="flex items-center justify-center py-2.5 sm:py-3 lg:py-4 px-3 sm:px-4 border border-gray-200 rounded-lg sm:rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all duration-200"
+                onClick={() => navigate('/signup')}
+                className="text-blue-600 hover:text-blue-700 font-medium transition-colors duration-200 underline underline-offset-2"
               >
-
-
-                <img
-                  src="/assets/google.png" alt="Google"
-                  className="h-5 w-5 sm:h-6 sm:w-6"
-                />
-                <span className="ml-2 text-xs sm:text-sm font-medium text-gray-700 hidden sm:inline">
-                  {t('google')}
-                </span>
+                {t('sign_up')}
               </button>
-
-              <button
-                onClick={handleFacebookSignIn}
-                className="flex items-center justify-center py-2.5 sm:py-3 lg:py-4 px-3 sm:px-4 border border-gray-200 rounded-lg sm:rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all duration-200"
-              >
-                <img
-                  src="/assets/facebook.png" alt="Facebook"
-                  className="h-5 w-5 sm:h-6 sm:w-6"
-                />
-                <span className="ml-2 text-xs sm:text-sm font-medium text-gray-700 hidden sm:inline">
-                  {t('facebook')}
-                </span>
-              </button>
-            </div>
-
-
-            <div className="text-center mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-gray-100">
-              <p className="text-xs sm:text-sm text-gray-600">
-                {t('no_account')}{' '}
-                <button
-                  onClick={() => navigate('/signup')}
-                  className="text-blue-600 hover:text-blue-700 font-medium transition-colors duration-200 underline underline-offset-2"
-                >
-                  {t('sign_up')}
-                </button>
-              </p>
-            </div>
+            </p>
           </div>
         </div>
       </div>

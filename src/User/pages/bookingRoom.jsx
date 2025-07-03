@@ -6,19 +6,7 @@ import {
   Monitor, Projector, Clock, CheckCircle,
   XCircle, AlertCircle, Calendar, Edit, Play, CheckSquare
 } from 'lucide-react';
-
-const AmenityIcon = ({ type }) => {
-  const icons = {
-    wifi: Wifi,
-    parking: Car,
-    coffee: Coffee,
-    restaurant: Utensils,
-    projector: Projector,
-    monitor: Monitor
-  };
-  const Icon = icons[type];
-  return Icon ? <Icon className="w-4 h-4 text-gray-600" /> : null;
-};
+import { useNavigate } from 'react-router-dom';
 
 const StatusBadge = ({ status }) => {
   const statusConfig = {
@@ -63,10 +51,10 @@ const AvailabilityBadge = ({ booking }) => {
     const now = new Date();
     const bookingDate = new Date(booking.bookingDate);
     const today = new Date();
-    
+
     // Check if booking is today
     const isToday = bookingDate.toDateString() === today.toDateString();
-    
+
     if (!isToday || (booking.status !== 'approved' && booking.status !== 'confirmed')) {
       return null; // Don't show availability for non-today or non-active bookings
     }
@@ -74,22 +62,22 @@ const AvailabilityBadge = ({ booking }) => {
     // Parse booking times
     const [startHours, startMinutes] = booking.startTime.split(':').map(Number);
     const [endHours, endMinutes] = booking.endTime.split(':').map(Number);
-    
+
     const startTime = new Date(today);
     startTime.setHours(startHours, startMinutes, 0, 0);
-    
+
     const endTime = new Date(today);
     endTime.setHours(endHours, endMinutes, 0, 0);
-    
+
     const currentTime = now.getTime();
     const startTimeMs = startTime.getTime();
     const endTimeMs = endTime.getTime();
-    
+
     if (currentTime >= startTimeMs && currentTime <= endTimeMs) {
       // Meeting is currently in progress
       const remainingMs = endTimeMs - currentTime;
       const remainingMinutes = Math.ceil(remainingMs / (1000 * 60));
-      
+
       return {
         status: 'in-progress',
         text: `Meeting in progress • ${remainingMinutes}m left`,
@@ -102,7 +90,7 @@ const AvailabilityBadge = ({ booking }) => {
       // Meeting hasn't started yet
       const timeToStart = startTimeMs - currentTime;
       const minutesToStart = Math.ceil(timeToStart / (1000 * 60));
-      
+
       if (minutesToStart <= 15) {
         return {
           status: 'starting-soon',
@@ -124,16 +112,16 @@ const AvailabilityBadge = ({ booking }) => {
         border: 'border-green-200'
       };
     }
-    
+
     return null;
   };
 
   const availability = getCurrentAvailability(booking);
-  
+
   if (!availability) return null;
-  
+
   const Icon = availability.icon;
-  
+
   return (
     <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${availability.color} ${availability.bg} ${availability.border} border ml-2`}>
       <Icon className="w-3 h-3 mr-1" />
@@ -144,7 +132,7 @@ const AvailabilityBadge = ({ booking }) => {
 
 const BookingCard = ({ booking, onManage, onCancel, onEdit }) => {
   const [imageError, setImageError] = useState(false);
-  
+
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
@@ -156,28 +144,32 @@ const BookingCard = ({ booking, onManage, onCancel, onEdit }) => {
     const date = new Date(dateString);
     const [startHours, startMinutes] = startTime.split(':');
     const [endHours, endMinutes] = endTime.split(':');
-    
+
     date.setHours(startHours, startMinutes);
     const start = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-    
+
     date.setHours(endHours, endMinutes);
     const end = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-    
+
     return `${start} - ${end}`;
   };
 
   const calculateDuration = (startTime, endTime) => {
     const [startHours, startMinutes] = startTime.split(':').map(Number);
     const [endHours, endMinutes] = endTime.split(':').map(Number);
-    
+
     let hours = endHours - startHours;
     let minutes = endMinutes - startMinutes;
-    
+
     if (minutes < 0) {
       hours -= 1;
       minutes += 60;
     }
-    
+
+    if (hours < 0) { // Handle cases where end time is on the next day, though rare for single meetings
+        hours += 24;
+    }
+
     if (hours === 0) {
       return `${minutes} ${minutes === 1 ? 'minute' : 'minutes'}`;
     } else if (minutes === 0) {
@@ -193,8 +185,22 @@ const BookingCard = ({ booking, onManage, onCancel, onEdit }) => {
     return bookingDate.toDateString() === today.toDateString();
   };
 
-  const canCancel = booking.status === 'confirmed' || booking.status === 'pending' || booking.status === 'approved';
-  const canEdit = booking.status === 'confirmed' || booking.status === 'pending' || booking.status === 'approved';
+  // --- MODIFIED LOGIC HERE ---
+  // A booking can only be canceled if its status is 'confirmed' or 'pending'.
+  const canCancel = booking.status === 'confirmed' || booking.status === 'pending';
+
+  // A booking can only be edited if its status is 'confirmed' or 'pending' AND the meeting start time hasn't passed.
+  const now = new Date();
+  const bookingDate = new Date(booking.bookingDate);
+  const [startHours, startMinutes] = booking.startTime.split(':').map(Number);
+
+  const meetingStartDateTime = new Date(bookingDate);
+  meetingStartDateTime.setHours(startHours, startMinutes, 0, 0);
+
+  const hasMeetingStarted = now > meetingStartDateTime;
+
+  const canEdit = (booking.status === 'confirmed' || booking.status === 'pending') && !hasMeetingStarted;
+  // --- END MODIFIED LOGIC ---
 
   // Function to get room photo URL
   const getRoomPhotoUrl = () => {
@@ -217,11 +223,11 @@ const BookingCard = ({ booking, onManage, onCancel, onEdit }) => {
   const photoUrl = getRoomPhotoUrl();
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-4">
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden"> {/* Removed mb-4 to allow grid gap to handle spacing */}
       <div className="relative">
         {photoUrl && !imageError ? (
           <div className="aspect-video bg-gray-100 relative overflow-hidden">
-            <img 
+            <img
               src={photoUrl}
               alt={booking.roomId?.name || 'Meeting Room'}
               className="w-full h-full object-cover"
@@ -272,13 +278,13 @@ const BookingCard = ({ booking, onManage, onCancel, onEdit }) => {
 
         <div className="flex items-center text-gray-600 text-sm mb-2">
           <Clock className="w-4 h-4 mr-1" />
-          {formatTimeRange(booking.bookingDate, booking.startTime, booking.endTime)} 
+          {formatTimeRange(booking.bookingDate, booking.startTime, booking.endTime)}
           ({calculateDuration(booking.startTime, booking.endTime)})
         </div>
 
         <div className="flex items-center text-gray-600 text-sm mb-3">
           <Users className="w-4 h-4 mr-1" />
-          {booking.attendees || 1} people (Capacity: {booking.roomId?.capacity || 'N/A'})
+          {booking.numberOfAttendees || booking.attendees || 'N/A'} people (Capacity: {booking.roomId?.capacity || 'N/A'})
         </div>
 
         {booking.purpose && (
@@ -289,11 +295,20 @@ const BookingCard = ({ booking, onManage, onCancel, onEdit }) => {
           </div>
         )}
 
-        {booking.roomId?.amenities && (
-          <div className="flex items-center space-x-3 mb-4">
-            {booking.roomId.amenities.map((amenity, index) => (
-              <AmenityIcon key={index} type={amenity} />
-            ))}
+        {booking.requestedEquipment?.length > 0 && (
+          <div className="mb-3">
+            <p className="text-sm text-gray-600">
+              <span className="font-medium">Equipment:</span> {booking.requestedEquipment.map((item, index) => {
+                const name = item.name || 'Unknown';
+                const quantity = item.quantity || item.requestedQuantity || 1;
+                return (
+                  <span key={index}>
+                    {index > 0 && ', '}
+                    {name} ({quantity})
+                  </span>
+                );
+              })}
+            </p>
           </div>
         )}
 
@@ -315,7 +330,7 @@ const BookingCard = ({ booking, onManage, onCancel, onEdit }) => {
                 Edit
               </button>
             )}
-            
+
             {canCancel && (
               <button
                 onClick={() => onCancel(booking)}
@@ -336,12 +351,20 @@ const BookingScreen = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchBookings = async () => {
       try {
-        const response = await api.get('/bookings/me');
-        console.log('Bookings response:', response.data); // Debug log
+        setLoading(true);
+        let endpoint = '/bookings/me';
+
+        // Use history endpoint when history tab is selected
+        if (activeFilter === 'history') {
+          endpoint = '/bookings/me/history';
+        }
+
+        const response = await api.get(endpoint);
         setBookings(response.data.data);
       } catch (error) {
         console.error('Error fetching bookings:', error);
@@ -352,49 +375,57 @@ const BookingScreen = () => {
     };
 
     fetchBookings();
-    
+
     // Update availability status every minute
     const interval = setInterval(fetchBookings, 60000);
-    
+
     return () => clearInterval(interval);
-  }, []);
+  }, [activeFilter]);
 
   const handleManage = (booking) => {
     Swal.fire({
       title: 'Booking Details',
       html: `
-        <div class="text-left">
-          <p><strong>Room:</strong> ${booking.roomId?.name || 'N/A'}</p>
-          <p><strong>Date:</strong> ${new Date(booking.bookingDate).toLocaleDateString()}</p>
-          <p><strong>Time:</strong> ${booking.startTime} - ${booking.endTime}</p>
-          <p><strong>Status:</strong> ${booking.status}</p>
-          <p><strong>Purpose:</strong> ${booking.purpose || 'Not specified'}</p>
-          ${booking.requestedEquipment?.length ? `
-            <p><strong>Equipment:</strong></p>
-            <ul>
-              ${booking.requestedEquipment.map(item => 
-                `<li>${item.name} (${item.quantity})</li>`
-              ).join('')}
-            </ul>
-          ` : ''}
-          ${booking.notes ? `<p><strong>Notes:</strong> ${booking.notes}</p>` : ''}
-        </div>
+      <div class="text-left">
+        <p><strong>Room:</strong> ${booking.roomId?.name || 'N/A'}</p>
+        <p><strong>Date:</strong> ${new Date(booking.bookingDate).toLocaleDateString()}</p>
+        <p><strong>Time:</strong> ${booking.startTime} - ${booking.endTime}</p>
+        <p><strong>Status:</strong> ${booking.status}</p>
+        <p><strong>Purpose:</strong> ${booking.purpose || 'Not specified'}</p>
+        <p><strong>Attendees:</strong> ${booking.numberOfAttendees || 'N/A'}</p>
+        ${booking.requestedEquipment?.length ? `
+          <p><strong>Requested Equipment:</strong></p>
+          <ul class="list-disc pl-5">
+            ${booking.requestedEquipment.map(item => {
+              const name = item.name || 'Unknown';
+              const quantity = item.quantity || item.requestedQuantity || 1;
+              return `<li>${name} (${quantity})</li>`;
+            }).join('')}
+          </ul>
+        ` : '<p>No equipment requested</p>'}
+        ${booking.notes ? `<p><strong>Notes:</strong> ${booking.notes}</p>` : ''}
+      </div>
       `,
       confirmButtonText: 'Close'
     });
   };
 
   const handleEdit = (booking) => {
-    // You'll need to implement your edit form or navigation here
-    // For example, navigate to an edit page:
-    // navigate(`/bookings/edit/${booking._id}`);
-    
-    Swal.fire({
-      title: 'Edit Booking',
-      text: 'Edit functionality would open a form to modify this booking',
-      icon: 'info',
-      confirmButtonText: 'OK'
+    // When navigating to edit, pass the room's actual equipment
+    navigate(`/bookings/edit/${booking._id}`, {
+      state: {
+        room: booking.roomId,
+        booking: booking
+      }
     });
+
+    // You can remove this Swal.fire, as the navigation handles the action
+    // Swal.fire({
+    //   title: 'Edit Booking',
+    //   text: 'Edit functionality would open a form to modify this booking',
+    //   icon: 'info',
+    //   confirmButtonText: 'OK'
+    // });
   };
 
   const handleCancel = async (booking) => {
@@ -411,11 +442,11 @@ const BookingScreen = () => {
     if (result.isConfirmed) {
       try {
         await api.delete(`/bookings/${booking._id}`);
-        
+
         setBookings(prev => prev.map(b =>
           b._id === booking._id ? { ...b, status: 'cancelled' } : b
         ));
-        
+
         Swal.fire('Cancelled!', 'Your booking has been cancelled.', 'success');
       } catch (err) {
         Swal.fire('Error', 'Failed to cancel booking.', 'error');
@@ -430,17 +461,15 @@ const BookingScreen = () => {
       (booking._id.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (booking.purpose?.toLowerCase().includes(searchQuery.toLowerCase()));
 
-    const status = booking.status;
+    // For history tab, we don't need additional filtering since the API returns only history
+    if (activeFilter === 'history') return searchMatch;
 
-    if (activeFilter === 'all') return searchMatch;
-    if (activeFilter === 'upcoming') return searchMatch && (status === 'confirmed' || status === 'pending' || status === 'approved');
-    if (activeFilter === 'history') return searchMatch && (status === 'completed' || status === 'cancelled' || status === 'rejected');
-    return false;
+    // For all bookings, filter by search only
+    return searchMatch;
   });
 
   const filterTabs = [
     { key: 'all', label: 'All Bookings' },
-    { key: 'upcoming', label: 'Upcoming' },
     { key: 'history', label: 'History' }
   ];
 
@@ -453,28 +482,30 @@ const BookingScreen = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex flex-col"> {/* Added flex flex-col for sticky header/footer */}
+      {/* Header */}
       <div className="bg-white border-b border-gray-100 sticky top-0 z-40">
-        <div className="px-4 py-4 text-center">
+        <div className="px-4 py-4 text-center max-w-5xl mx-auto"> {/* Added max-w-5xl and mx-auto */}
           <h1 className="text-2xl font-bold text-gray-900">My Bookings</h1>
         </div>
       </div>
 
-      <div className="bg-white px-4 py-3 border-b border-gray-100 flex space-x-2 overflow-x-auto">
+      {/* Filter Tabs */}
+      <div className="bg-white px-4 py-3 border-b border-gray-100 flex space-x-2 overflow-x-auto sticky top-[72px] z-30 max-w-5xl mx-auto w-full"> {/* Adjusted top and added max-w-5xl, mx-auto, w-full */}
         {filterTabs.map(tab => (
           <button
             key={tab.key}
             onClick={() => setActiveFilter(tab.key)}
-            className={`px-4 py-2 rounded-full text-sm font-medium ${
-              activeFilter === tab.key ? 'bg-black text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }`}
+            className={`px-4 py-2 rounded-full text-sm font-medium ${activeFilter === tab.key ? 'bg-black text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
           >
             {tab.label}
           </button>
         ))}
       </div>
 
-      <div className="bg-white px-4 py-3 border-b border-gray-100">
+      {/* Search Input */}
+      <div className="bg-white px-4 py-3 border-b border-gray-100 sticky top-[128px] z-20 max-w-5xl mx-auto w-full"> {/* Adjusted top and added max-w-5xl, mx-auto, w-full */}
         <input
           type="text"
           placeholder="Search bookings by room, location, or ID..."
@@ -484,7 +515,8 @@ const BookingScreen = () => {
         />
       </div>
 
-      <div className="px-4 py-4">
+      {/* Booking Cards Grid */}
+      <div className="flex-1 px-4 py-4 w-full max-w-5xl mx-auto"> {/* Added flex-1, max-w-5xl, and mx-auto */}
         {filteredBookings.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-gray-500">
             <Calendar className="w-16 h-16 mb-4" />
@@ -493,18 +525,20 @@ const BookingScreen = () => {
           </div>
         ) : (
           <>
-            <p className="text-sm text-gray-600 mb-2">
+            <p className="text-sm text-gray-600 mb-4"> {/* Increased mb for better spacing with grid */}
               Showing {filteredBookings.length} booking{filteredBookings.length !== 1 ? 's' : ''}
             </p>
-            {filteredBookings.map(booking => (
-              <BookingCard
-                key={booking._id}
-                booking={booking}
-                onManage={handleManage}
-                onCancel={handleCancel}
-                onEdit={handleEdit}
-              />
-            ))}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"> {/* Responsive grid */}
+              {filteredBookings.map(booking => (
+                <BookingCard
+                  key={booking._id}
+                  booking={booking}
+                  onManage={handleManage}
+                  onCancel={handleCancel}
+                  onEdit={handleEdit}
+                />
+              ))}
+            </div>
           </>
         )}
       </div>
