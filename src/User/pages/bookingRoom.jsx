@@ -2,13 +2,16 @@ import React, { useEffect, useState } from 'react';
 import api from '../../api';
 import Swal from 'sweetalert2';
 import {
-  MapPin, Wifi, Car, Coffee, Utensils, Users,
-  Monitor, Projector, Clock, CheckCircle,
-  XCircle, AlertCircle, Calendar, Edit, Play, CheckSquare
+  MapPin, Wifi, Monitor, Mic,
+  Clock, CheckCircle, XCircle, AlertCircle, Calendar, Edit, Play, CheckSquare, Users
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import html2pdf from 'html2pdf.js'; // Import html2pdf.js
 
 const StatusBadge = ({ status }) => {
+  const { t, i18n } = useTranslation();
+
   const statusConfig = {
     confirmed: {
       icon: CheckCircle, color: 'text-green-600',
@@ -38,28 +41,31 @@ const StatusBadge = ({ status }) => {
   const config = statusConfig[status];
   if (!config) return null;
   const Icon = config.icon;
+
+  const translatedText = t(`bookingScreen.${status}Status`, { defaultValue: config.text });
+
   return (
-    <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${config.color} ${config.bg} ${config.border} border`}>
+    <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${config.color} ${config.bg} ${config.border} border ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
       <Icon className="w-3 h-3 mr-1" />
-      {config.text}
+      {translatedText}
     </div>
   );
 };
 
 const AvailabilityBadge = ({ booking }) => {
+  const { t, i18n } = useTranslation();
+
   const getCurrentAvailability = (booking) => {
     const now = new Date();
     const bookingDate = new Date(booking.bookingDate);
     const today = new Date();
 
-    // Check if booking is today
     const isToday = bookingDate.toDateString() === today.toDateString();
 
     if (!isToday || (booking.status !== 'approved' && booking.status !== 'confirmed')) {
-      return null; // Don't show availability for non-today or non-active bookings
+      return null;
     }
 
-    // Parse booking times
     const [startHours, startMinutes] = booking.startTime.split(':').map(Number);
     const [endHours, endMinutes] = booking.endTime.split(':').map(Number);
 
@@ -74,27 +80,25 @@ const AvailabilityBadge = ({ booking }) => {
     const endTimeMs = endTime.getTime();
 
     if (currentTime >= startTimeMs && currentTime <= endTimeMs) {
-      // Meeting is currently in progress
       const remainingMs = endTimeMs - currentTime;
       const remainingMinutes = Math.ceil(remainingMs / (1000 * 60));
 
       return {
         status: 'in-progress',
-        text: `Meeting in progress • ${remainingMinutes}m left`,
+        text: t('bookingScreen.meetingInProgress', { count: remainingMinutes }),
         icon: Play,
         color: 'text-red-600',
         bg: 'bg-red-50',
         border: 'border-red-200'
       };
     } else if (currentTime < startTimeMs) {
-      // Meeting hasn't started yet
       const timeToStart = startTimeMs - currentTime;
       const minutesToStart = Math.ceil(timeToStart / (1000 * 60));
 
       if (minutesToStart <= 15) {
         return {
           status: 'starting-soon',
-          text: `Starting in ${minutesToStart}m`,
+          text: t('bookingScreen.startingIn', { count: minutesToStart }),
           icon: Clock,
           color: 'text-yellow-600',
           bg: 'bg-yellow-50',
@@ -102,10 +106,9 @@ const AvailabilityBadge = ({ booking }) => {
         };
       }
     } else {
-      // Meeting has finished
       return {
         status: 'ready',
-        text: 'Room is ready to book',
+        text: t('bookingScreen.roomReadyToBook'),
         icon: CheckSquare,
         color: 'text-green-600',
         bg: 'bg-green-50',
@@ -123,7 +126,7 @@ const AvailabilityBadge = ({ booking }) => {
   const Icon = availability.icon;
 
   return (
-    <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${availability.color} ${availability.bg} ${availability.border} border ml-2`}>
+    <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${availability.color} ${availability.bg} ${availability.border} border ml-2 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
       <Icon className="w-3 h-3 mr-1" />
       {availability.text}
     </div>
@@ -132,10 +135,11 @@ const AvailabilityBadge = ({ booking }) => {
 
 const BookingCard = ({ booking, onManage, onCancel, onEdit }) => {
   const [imageError, setImageError] = useState(false);
+  const { t, i18n } = useTranslation();
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
+    return date.toLocaleDateString(i18n.language === 'lo' ? 'lo-LA' : 'en-US', {
       weekday: 'short', month: 'short', day: 'numeric', year: 'numeric'
     });
   };
@@ -146,10 +150,10 @@ const BookingCard = ({ booking, onManage, onCancel, onEdit }) => {
     const [endHours, endMinutes] = endTime.split(':');
 
     date.setHours(startHours, startMinutes);
-    const start = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    const start = date.toLocaleTimeString(i18n.language === 'lo' ? 'lo-LA' : 'en-US', { hour: '2-digit', minute: '2-digit' });
 
     date.setHours(endHours, endMinutes);
-    const end = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    const end = date.toLocaleTimeString(i18n.language === 'lo' ? 'lo-LA' : 'en-US', { hour: '2-digit', minute: '2-digit' });
 
     return `${start} - ${end}`;
   };
@@ -166,16 +170,16 @@ const BookingCard = ({ booking, onManage, onCancel, onEdit }) => {
       minutes += 60;
     }
 
-    if (hours < 0) { // Handle cases where end time is on the next day, though rare for single meetings
-        hours += 24;
+    if (hours < 0) {
+      hours += 24;
     }
 
     if (hours === 0) {
-      return `${minutes} ${minutes === 1 ? 'minute' : 'minutes'}`;
+      return t('bookingScreen.minutesLeft', { count: minutes });
     } else if (minutes === 0) {
-      return `${hours} ${hours === 1 ? 'hour' : 'hours'}`;
+      return t('bookingScreen.hoursOnly', { count: hours });
     } else {
-      return `${hours} ${hours === 1 ? 'hour' : 'hours'} ${minutes} minutes`;
+      return t('bookingScreen.hoursAndMinutes', { hours: hours, minutes: minutes });
     }
   };
 
@@ -185,11 +189,8 @@ const BookingCard = ({ booking, onManage, onCancel, onEdit }) => {
     return bookingDate.toDateString() === today.toDateString();
   };
 
-  // --- MODIFIED LOGIC HERE ---
-  // A booking can only be canceled if its status is 'confirmed' or 'pending'.
   const canCancel = booking.status === 'confirmed' || booking.status === 'pending';
 
-  // A booking can only be edited if its status is 'confirmed' or 'pending' AND the meeting start time hasn't passed.
   const now = new Date();
   const bookingDate = new Date(booking.bookingDate);
   const [startHours, startMinutes] = booking.startTime.split(':').map(Number);
@@ -200,11 +201,8 @@ const BookingCard = ({ booking, onManage, onCancel, onEdit }) => {
   const hasMeetingStarted = now > meetingStartDateTime;
 
   const canEdit = (booking.status === 'confirmed' || booking.status === 'pending') && !hasMeetingStarted;
-  // --- END MODIFIED LOGIC ---
 
-  // Function to get room photo URL
   const getRoomPhotoUrl = () => {
-    // Check different possible photo field structures
     if (booking.roomId?.photos && Array.isArray(booking.roomId.photos) && booking.roomId.photos.length > 0) {
       return booking.roomId.photos[0];
     }
@@ -223,13 +221,13 @@ const BookingCard = ({ booking, onManage, onCancel, onEdit }) => {
   const photoUrl = getRoomPhotoUrl();
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden"> {/* Removed mb-4 to allow grid gap to handle spacing */}
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
       <div className="relative">
         {photoUrl && !imageError ? (
           <div className="aspect-video bg-gray-100 relative overflow-hidden">
             <img
               src={photoUrl}
-              alt={booking.roomId?.name || 'Meeting Room'}
+              alt={booking.roomId?.name || t('roomCard.unnamedRoom')}
               className="w-full h-full object-cover"
               onError={() => setImageError(true)}
               onLoad={() => setImageError(false)}
@@ -242,8 +240,8 @@ const BookingCard = ({ booking, onManage, onCancel, onEdit }) => {
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="text-white text-center">
                 <Monitor className="w-12 h-12 mx-auto mb-2 opacity-60" />
-                <p className="text-sm font-medium opacity-80">
-                  {booking.roomId?.name || 'Meeting Room'}
+                <p className={`text-sm font-medium opacity-80 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
+                  {booking.roomId?.name || t('roomCard.unnamedRoom')}
                 </p>
               </div>
             </div>
@@ -257,49 +255,49 @@ const BookingCard = ({ booking, onManage, onCancel, onEdit }) => {
 
       <div className="p-4">
         <div className="flex items-start justify-between mb-2">
-          <h3 className="font-semibold text-lg text-gray-900">
-            {booking.roomId?.name || 'Meeting Room'}
+          <h3 className={`font-semibold text-lg text-gray-900 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
+            {booking.roomId?.name || t('roomCard.unnamedRoom')}
           </h3>
-          <span className="text-sm text-gray-500">#{booking._id.slice(-6).toUpperCase()}</span>
+          <span className={`text-sm text-gray-500 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>#{booking._id.slice(-6).toUpperCase()}</span>
         </div>
 
         {booking.roomId?.location && (
-          <div className="flex items-center text-gray-600 text-sm mb-2">
+          <div className={`flex items-center text-gray-600 text-sm mb-2 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
             <MapPin className="w-4 h-4 mr-1" />
             {booking.roomId.location}
           </div>
         )}
 
-        <div className="flex items-center text-gray-600 text-sm mb-2">
+        <div className={`flex items-center text-gray-600 text-sm mb-2 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
           <Calendar className="w-4 h-4 mr-1" />
           {formatDate(booking.bookingDate)}
-          {isToday() && <span className="ml-2 text-blue-600 font-medium">(Today)</span>}
+          {isToday() && <span className="ml-2 text-blue-600 font-medium">{t('bookingScreen.today')}</span>}
         </div>
 
-        <div className="flex items-center text-gray-600 text-sm mb-2">
+        <div className={`flex items-center text-gray-600 text-sm mb-2 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
           <Clock className="w-4 h-4 mr-1" />
           {formatTimeRange(booking.bookingDate, booking.startTime, booking.endTime)}
           ({calculateDuration(booking.startTime, booking.endTime)})
         </div>
 
-        <div className="flex items-center text-gray-600 text-sm mb-3">
+        <div className={`flex items-center text-gray-600 text-sm mb-3 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
           <Users className="w-4 h-4 mr-1" />
-          {booking.numberOfAttendees || booking.attendees || 'N/A'} people (Capacity: {booking.roomId?.capacity || 'N/A'})
+          {booking.numberOfAttendees || booking.attendees || t('bookingScreen.notSpecified')} {t('roomCard.capacityUnit')} ({t('bookingScreen.capacityLabel')} {booking.roomId?.capacity || t('bookingScreen.notSpecified')})
         </div>
 
         {booking.purpose && (
           <div className="mb-3">
-            <p className="text-sm text-gray-600">
-              <span className="font-medium">Purpose:</span> {booking.purpose}
+            <p className={`text-sm text-gray-600 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
+              <span className="font-medium">{t('bookingScreen.purposeLabel')}</span> {booking.purpose}
             </p>
           </div>
         )}
 
         {booking.requestedEquipment?.length > 0 && (
           <div className="mb-3">
-            <p className="text-sm text-gray-600">
-              <span className="font-medium">Equipment:</span> {booking.requestedEquipment.map((item, index) => {
-                const name = item.name || 'Unknown';
+            <p className={`text-sm text-gray-600 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
+              <span className="font-medium">{t('bookingScreen.requestedEquipmentLabel')}</span> {booking.requestedEquipment.map((item, index) => {
+                const name = item.name || t('bookingScreen.unknown');
                 const quantity = item.quantity || item.requestedQuantity || 1;
                 return (
                   <span key={index}>
@@ -312,31 +310,39 @@ const BookingCard = ({ booking, onManage, onCancel, onEdit }) => {
           </div>
         )}
 
+        {booking.notes && (
+          <div className="mb-3">
+            <p className={`text-sm text-gray-600 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
+              <span className="font-medium">{t('bookingScreen.notesLabel')}</span> {booking.notes}
+            </p>
+          </div>
+        )}
+
         <div className="flex justify-between items-center">
           <button
             onClick={() => onManage(booking)}
-            className="bg-gray-100 text-gray-700 px-4 py-2 rounded-full text-sm font-medium hover:bg-gray-200"
+            className={`bg-gray-100 text-gray-700 px-4 py-2 rounded-full text-sm font-medium hover:bg-gray-200 ${i18n.language === 'lo' ? 'font-lao' : ''}`}
           >
-            View Details
+            {t('bookingScreen.viewDetailsButton')}
           </button>
 
           <div className="flex space-x-2">
             {canEdit && (
               <button
                 onClick={() => onEdit(booking)}
-                className="bg-blue-500 text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-blue-600 flex items-center"
+                className={`bg-blue-500 text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-blue-600 flex items-center ${i18n.language === 'lo' ? 'font-lao' : ''}`}
               >
                 <Edit className="w-4 h-4 mr-1" />
-                Edit
+                {t('bookingScreen.editButton')}
               </button>
             )}
 
             {canCancel && (
               <button
                 onClick={() => onCancel(booking)}
-                className="bg-red-500 text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-red-600"
+                className={`bg-red-500 text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-red-600 ${i18n.language === 'lo' ? 'font-lao' : ''}`}
               >
-                Cancel
+                {t('bookingScreen.cancelButton')}
               </button>
             )}
           </div>
@@ -352,6 +358,7 @@ const BookingScreen = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
 
   useEffect(() => {
     const fetchBookings = async () => {
@@ -359,7 +366,6 @@ const BookingScreen = () => {
         setLoading(true);
         let endpoint = '/bookings/me';
 
-        // Use history endpoint when history tab is selected
         if (activeFilter === 'history') {
           endpoint = '/bookings/me/history';
         }
@@ -368,7 +374,16 @@ const BookingScreen = () => {
         setBookings(response.data.data);
       } catch (error) {
         console.error('Error fetching bookings:', error);
-        Swal.fire('Error', 'Failed to load bookings', 'error');
+        Swal.fire({
+          title: t('bookingScreen.fetchErrorTitle'),
+          text: t('bookingScreen.fetchErrorText'),
+          icon: 'error',
+          customClass: {
+            title: i18n.language === 'lo' ? 'font-lao' : '',
+            htmlContainer: i18n.language === 'lo' ? 'font-lao' : '',
+            confirmButton: i18n.language === 'lo' ? 'font-lao' : ''
+          }
+        });
       } finally {
         setLoading(false);
       }
@@ -376,67 +391,126 @@ const BookingScreen = () => {
 
     fetchBookings();
 
-    // Update availability status every minute
     const interval = setInterval(fetchBookings, 60000);
 
     return () => clearInterval(interval);
-  }, [activeFilter]);
+  }, [activeFilter, t, i18n.language]);
 
-  const handleManage = (booking) => {
-    Swal.fire({
-      title: 'Booking Details',
-      html: `
-      <div class="text-left">
-        <p><strong>Room:</strong> ${booking.roomId?.name || 'N/A'}</p>
-        <p><strong>Date:</strong> ${new Date(booking.bookingDate).toLocaleDateString()}</p>
-        <p><strong>Time:</strong> ${booking.startTime} - ${booking.endTime}</p>
-        <p><strong>Status:</strong> ${booking.status}</p>
-        <p><strong>Purpose:</strong> ${booking.purpose || 'Not specified'}</p>
-        <p><strong>Attendees:</strong> ${booking.numberOfAttendees || 'N/A'}</p>
-        ${booking.requestedEquipment?.length ? `
-          <p><strong>Requested Equipment:</strong></p>
+  const handlePrintBookingDetails = (booking) => {
+    const userName = booking.userId ? `${booking.userId.firstName || ''} ${booking.userId.lastName || ''}`.trim() : t('bookingScreen.notSpecified');
+    const userPhone = booking.userId?.phoneNumber || t('bookingScreen.notSpecified');
+
+    const element = document.createElement('div');
+    element.className = `text-left p-6 bg-white rounded-lg shadow-lg ${i18n.language === 'lo' ? 'font-lao' : ''}`;
+    element.innerHTML = `
+      <h2 class="text-2xl font-bold mb-4">${t('bookingScreen.bookingDetailsTitle')}</h2>
+      <p class="mb-2"><strong>${t('bookingScreen.roomLabel')}:</strong> ${booking.roomId?.name || t('bookingScreen.notSpecified')}</p>
+      <p class="mb-2"><strong>${t('bookingScreen.bookingIdLabel')}:</strong> #${booking._id.slice(-6).toUpperCase()}</p>
+      <p class="mb-2"><strong>${t('bookingScreen.bookedByLabel')}:</strong> ${userName}</p>
+      <p class="mb-2"><strong>${t('bookingScreen.contactPhoneLabel')}:</strong> ${userPhone}</p>
+      <p class="mb-2"><strong>${t('bookingScreen.dateLabel')}:</strong> ${new Date(booking.bookingDate).toLocaleDateString(i18n.language === 'lo' ? 'lo-LA' : 'en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+      <p class="mb-2"><strong>${t('bookingScreen.timeLabel')}:</strong> ${booking.startTime} - ${booking.endTime}</p>
+      <p class="mb-2"><strong>${t('bookingScreen.statusLabel')}:</strong> <span class="capitalize">${t(`bookingScreen.${booking.status}Status`, { defaultValue: booking.status })}</span></p>
+      <p class="mb-2"><strong>${t('bookingScreen.purposeLabel')}:</strong> ${booking.purpose || t('bookingScreen.notSpecified')}</p>
+      <p class="mb-2"><strong>${t('bookingScreen.attendeesLabel')}:</strong> ${booking.numberOfAttendees || t('bookingScreen.notSpecified')} ${t('roomCard.capacityUnit')} (${t('bookingScreen.capacityLabel')} ${booking.roomId?.capacity || t('bookingScreen.notSpecified')})</p>
+      ${booking.requestedEquipment?.length ? `
+        <div class="mb-2">
+          <p class="mb-1"><strong>${t('bookingScreen.requestedEquipmentLabel')}:</strong></p>
           <ul class="list-disc pl-5">
             ${booking.requestedEquipment.map(item => {
-              const name = item.name || 'Unknown';
+              const name = item.name || t('bookingScreen.unknown');
               const quantity = item.quantity || item.requestedQuantity || 1;
               return `<li>${name} (${quantity})</li>`;
             }).join('')}
           </ul>
-        ` : '<p>No equipment requested</p>'}
-        ${booking.notes ? `<p><strong>Notes:</strong> ${booking.notes}</p>` : ''}
+        </div>
+      ` : `<p class="mb-2">${t('bookingScreen.noEquipmentRequested')}</p>`}
+      ${booking.notes ? `<p class="mb-2"><strong>${t('bookingScreen.notesLabel')}:</strong> ${booking.notes}</p>` : ''}
+    `;
+
+    const opt = {
+      margin: 10,
+      filename: `booking_details_${booking._id.slice(-6).toUpperCase()}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    html2pdf().from(element).set(opt).save();
+  };
+
+  const handleManage = (booking) => {
+    const userName = booking.userId ? `${booking.userId.firstName || ''} ${booking.userId.lastName || ''}`.trim() : t('bookingScreen.notSpecified');
+    const userPhone = booking.userId?.phoneNumber || t('bookingScreen.notSpecified');
+
+    Swal.fire({
+      title: t('bookingScreen.bookingDetailsTitle'),
+      html: `
+      <div id="booking-details-content" class="text-left ${i18n.language === 'lo' ? 'font-lao' : ''}">
+        <p><strong>${t('bookingScreen.roomLabel')}:</strong> ${booking.roomId?.name || t('bookingScreen.notSpecified')}</p>
+        <p><strong>${t('bookingScreen.dateLabel')}:</strong> ${new Date(booking.bookingDate).toLocaleDateString(i18n.language === 'lo' ? 'lo-LA' : 'en-US')}</p>
+        <p><strong>${t('bookingScreen.timeLabel')}:</strong> ${booking.startTime} - ${booking.endTime}</p>
+        <p><strong>${t('bookingScreen.statusLabel')}:</strong> ${t(`bookingScreen.${booking.status}Status`, { defaultValue: booking.status })}</p>
+        <p><strong>${t('bookingScreen.bookedByLabel')}:</strong> ${userName}</p>
+        <p><strong>${t('bookingScreen.contactPhoneLabel')}:</strong> ${userPhone}</p>
+        <p><strong>${t('bookingScreen.purposeLabel')}:</strong> ${booking.purpose || t('bookingScreen.notSpecified')}</p>
+        <p><strong>${t('bookingScreen.attendeesLabel')}</strong> ${booking.numberOfAttendees || t('bookingScreen.notSpecified')} ${t('roomCard.capacityUnit')} (${t('bookingScreen.capacityLabel')} ${booking.roomId?.capacity || t('bookingScreen.notSpecified')})</p>
+        ${booking.requestedEquipment?.length ? `
+          <p><strong>${t('bookingScreen.requestedEquipmentLabel')}</strong></p>
+          <ul class="list-disc pl-5">
+            ${booking.requestedEquipment.map(item => {
+              const name = item.name || t('bookingScreen.unknown');
+              const quantity = item.quantity || item.requestedQuantity || 1;
+              return `<li>${name} (${quantity})</li>`;
+            }).join('')}
+          </ul>
+        ` : `<p>${t('bookingScreen.noEquipmentRequested')}</p>`}
+        ${booking.notes ? `<p><strong>${t('bookingScreen.notesLabel')}</strong> ${booking.notes}</p>` : ''}
       </div>
       `,
-      confirmButtonText: 'Close'
+      confirmButtonText: t('bookingScreen.closeButton'),
+      showCancelButton: true,
+      cancelButtonText: t('bookingScreen.printButton'),
+      cancelButtonColor: '#007bff',
+      reverseButtons: true,
+      customClass: {
+        title: i18n.language === 'lo' ? 'font-lao' : '',
+        htmlContainer: i18n.language === 'lo' ? 'font-lao' : '',
+        confirmButton: i18n.language === 'lo' ? 'font-lao' : '',
+        cancelButton: i18n.language === 'lo' ? 'font-lao' : ''
+      }
+    }).then((result) => {
+      if (result.dismiss === Swal.DismissReason.cancel) {
+        handlePrintBookingDetails(booking);
+      }
     });
   };
 
   const handleEdit = (booking) => {
-    // When navigating to edit, pass the room's actual equipment
     navigate(`/bookings/edit/${booking._id}`, {
       state: {
         room: booking.roomId,
         booking: booking
       }
     });
-
-    // You can remove this Swal.fire, as the navigation handles the action
-    // Swal.fire({
-    //   title: 'Edit Booking',
-    //   text: 'Edit functionality would open a form to modify this booking',
-    //   icon: 'info',
-    //   confirmButtonText: 'OK'
-    // });
   };
 
   const handleCancel = async (booking) => {
     const result = await Swal.fire({
-      title: `Cancel Booking #${booking._id.slice(-6).toUpperCase()}?`,
-      text: "This action cannot be undone.",
+      title: t('bookingScreen.cancelBookingConfirmationTitle', { bookingId: booking._id.slice(-6).toUpperCase() }),
+      text: t('bookingScreen.cancelBookingConfirmationText'),
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#d33',
       cancelButtonColor: '#aaa',
-      confirmButtonText: 'Yes, cancel it!'
+      confirmButtonText: t('bookingScreen.yesCancelIt'),
+      cancelButtonText: t('userHomeScreen.cancel'),
+      customClass: {
+        title: i18n.language === 'lo' ? 'font-lao' : '',
+        htmlContainer: i18n.language === 'lo' ? 'font-lao' : '',
+        confirmButton: i18n.language === 'lo' ? 'font-lao' : '',
+        cancelButton: i18n.language === 'lo' ? 'font-lao' : ''
+      }
     });
 
     if (result.isConfirmed) {
@@ -447,9 +521,27 @@ const BookingScreen = () => {
           b._id === booking._id ? { ...b, status: 'cancelled' } : b
         ));
 
-        Swal.fire('Cancelled!', 'Your booking has been cancelled.', 'success');
+        Swal.fire({
+          title: t('bookingScreen.cancelledTitle'),
+          text: t('bookingScreen.cancelledSuccessText'),
+          icon: 'success',
+          customClass: {
+            title: i18n.language === 'lo' ? 'font-lao' : '',
+            htmlContainer: i18n.language === 'lo' ? 'font-lao' : '',
+            confirmButton: i18n.language === 'lo' ? 'font-lao' : ''
+          }
+        });
       } catch (err) {
-        Swal.fire('Error', 'Failed to cancel booking.', 'error');
+        Swal.fire({
+          title: t('bookingScreen.cancelErrorTitle'),
+          text: t('bookingScreen.cancelErrorText'),
+          icon: 'error',
+          customClass: {
+            title: i18n.language === 'lo' ? 'font-lao' : '',
+            htmlContainer: i18n.language === 'lo' ? 'font-lao' : '',
+            confirmButton: i18n.language === 'lo' ? 'font-lao' : ''
+          }
+        });
       }
     }
   };
@@ -461,43 +553,41 @@ const BookingScreen = () => {
       (booking._id.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (booking.purpose?.toLowerCase().includes(searchQuery.toLowerCase()));
 
-    // For history tab, we don't need additional filtering since the API returns only history
     if (activeFilter === 'history') return searchMatch;
 
-    // For all bookings, filter by search only
     return searchMatch;
   });
 
   const filterTabs = [
-    { key: 'all', label: 'All Bookings' },
-    { key: 'history', label: 'History' }
+    { key: 'all', label: t('bookingScreen.allBookingsTab') },
+    { key: 'history', label: t('bookingScreen.historyTab') }
   ];
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center text-gray-500 text-lg">
-        Loading bookings...
+        <p className={i18n.language === 'lo' ? 'font-lao' : ''}>{t('bookingScreen.loadingBookings')}</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col"> {/* Added flex flex-col for sticky header/footer */}
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header */}
       <div className="bg-white border-b border-gray-100 sticky top-0 z-40">
-        <div className="px-4 py-4 text-center max-w-5xl mx-auto"> {/* Added max-w-5xl and mx-auto */}
-          <h1 className="text-2xl font-bold text-gray-900">My Bookings</h1>
+        <div className="px-4 py-4 text-center max-w-5xl mx-auto">
+          <h1 className={`text-2xl font-bold text-gray-900 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>{t('bookingScreen.myBookingsHeader')}</h1>
         </div>
       </div>
 
       {/* Filter Tabs */}
-      <div className="bg-white px-4 py-3 border-b border-gray-100 flex space-x-2 overflow-x-auto sticky top-[72px] z-30 max-w-5xl mx-auto w-full"> {/* Adjusted top and added max-w-5xl, mx-auto, w-full */}
+      <div className="bg-white px-4 py-3 border-b border-gray-100 flex space-x-2 overflow-x-auto sticky top-[72px] z-30 max-w-5xl mx-auto w-full">
         {filterTabs.map(tab => (
           <button
             key={tab.key}
             onClick={() => setActiveFilter(tab.key)}
             className={`px-4 py-2 rounded-full text-sm font-medium ${activeFilter === tab.key ? 'bg-black text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
+              } ${i18n.language === 'lo' ? 'font-lao' : ''}`}
           >
             {tab.label}
           </button>
@@ -505,30 +595,30 @@ const BookingScreen = () => {
       </div>
 
       {/* Search Input */}
-      <div className="bg-white px-4 py-3 border-b border-gray-100 sticky top-[128px] z-20 max-w-5xl mx-auto w-full"> {/* Adjusted top and added max-w-5xl, mx-auto, w-full */}
+      <div className="bg-white px-4 py-3 border-b border-gray-100 sticky top-[128px] z-20 max-w-5xl mx-auto w-full">
         <input
           type="text"
-          placeholder="Search bookings by room, location, or ID..."
+          placeholder={t('bookingScreen.searchPlaceholder')}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full px-4 py-3 bg-gray-50 rounded-full text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500"
+          className={`w-full px-4 py-3 bg-gray-50 rounded-full text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 ${i18n.language === 'lo' ? 'font-lao' : ''}`}
         />
       </div>
 
       {/* Booking Cards Grid */}
-      <div className="flex-1 px-4 py-4 w-full max-w-5xl mx-auto"> {/* Added flex-1, max-w-5xl, and mx-auto */}
+      <div className="flex-1 px-4 py-4 w-full max-w-5xl mx-auto">
         {filteredBookings.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-gray-500">
             <Calendar className="w-16 h-16 mb-4" />
-            <h3 className="text-xl font-semibold">No Bookings Found</h3>
-            <p>{searchQuery ? 'Try a different search term.' : 'You have no bookings yet.'}</p>
+            <h3 className={`text-xl font-semibold ${i18n.language === 'lo' ? 'font-lao' : ''}`}>{t('bookingScreen.noBookingsFound')}</h3>
+            <p className={i18n.language === 'lo' ? 'font-lao' : ''}>{searchQuery ? t('bookingScreen.tryDifferentSearch') : t('bookingScreen.noBookingsYet')}</p>
           </div>
         ) : (
           <>
-            <p className="text-sm text-gray-600 mb-4"> {/* Increased mb for better spacing with grid */}
-              Showing {filteredBookings.length} booking{filteredBookings.length !== 1 ? 's' : ''}
+            <p className={`text-sm text-gray-600 mb-4 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
+              {t('bookingScreen.showingBookingsSummary', { count: filteredBookings.length, count_plural: filteredBookings.length !== 1 ? 's' : '' })}
             </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"> {/* Responsive grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredBookings.map(booking => (
                 <BookingCard
                   key={booking._id}

@@ -3,8 +3,11 @@ import { User, Edit, Shield, FileText, Globe, Lock, LogOut, Camera } from 'lucid
 import Swal from 'sweetalert2';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api';
+import { useTranslation } from 'react-i18next'; // Import useTranslation
 
 const ProfileScreen = () => {
+  const { t, i18n } = useTranslation(); // Initialize translation hook
+
   const [user, setUser] = useState({
     firstName: '',
     lastName: '',
@@ -17,7 +20,6 @@ const ProfileScreen = () => {
   const [isLoading, setIsLoading] = useState(true);
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
-  // const [selectedLanguage, setSelectedLanguage] = useState('English'); // This state is not used
 
   // Fetch user data on component mount
   useEffect(() => {
@@ -58,12 +60,13 @@ const ProfileScreen = () => {
         navigate('/login');
       } else {
         Swal.fire({
-          title: 'Error',
-          text: 'Failed to load profile data',
+          title: t('profileScreen.errorTitle'),
+          text: t('profileScreen.failedToLoadProfile'),
           icon: 'error',
-          confirmButtonColor: '#2563EB', // Changed to blue
+          confirmButtonColor: '#2563EB',
           customClass: {
-            popup: 'rounded-2xl',
+            popup: `rounded-2xl ${i18n.language === 'lo' ? 'font-lao' : ''}`,
+            htmlContainer: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
             confirmButton: 'rounded-xl font-medium px-6 py-3'
           }
         });
@@ -84,12 +87,13 @@ const ProfileScreen = () => {
     // Check file type and size
     if (!file.type.match('image.*')) {
       Swal.fire({
-        title: 'Invalid File',
-        text: 'Please select an image file (JPEG, PNG, etc.)',
+        title: t('profileScreen.invalidFileTitle'),
+        text: t('profileScreen.invalidFileText'),
         icon: 'error',
-        confirmButtonColor: '#2563EB', // Changed to blue
+        confirmButtonColor: '#2563EB',
         customClass: {
-          popup: 'rounded-2xl',
+          popup: `rounded-2xl ${i18n.language === 'lo' ? 'font-lao' : ''}`,
+          htmlContainer: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
           confirmButton: 'rounded-xl font-medium px-6 py-3'
         }
       });
@@ -98,12 +102,13 @@ const ProfileScreen = () => {
 
     if (file.size > 5 * 1024 * 1024) { // 5MB limit
       Swal.fire({
-        title: 'File Too Large',
-        text: 'Please select an image smaller than 5MB',
+        title: t('profileScreen.fileTooLargeTitle'),
+        text: t('profileScreen.fileTooLargeText'),
         icon: 'error',
-        confirmButtonColor: '#2563EB', // Changed to blue
+        confirmButtonColor: '#2563EB',
         customClass: {
-          popup: 'rounded-2xl',
+          popup: `rounded-2xl ${i18n.language === 'lo' ? 'font-lao' : ''}`,
+          htmlContainer: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
           confirmButton: 'rounded-xl font-medium px-6 py-3'
         }
       });
@@ -149,24 +154,26 @@ const ProfileScreen = () => {
       }));
 
       Swal.fire({
-        title: 'Success!',
-        text: 'Profile picture updated successfully',
+        title: t('profileScreen.successTitle'),
+        text: t('profileScreen.profilePictureUpdated'),
         icon: 'success',
-        confirmButtonColor: '#2563EB', // Changed to blue
+        confirmButtonColor: '#2563EB',
         customClass: {
-          popup: 'rounded-2xl',
+          popup: `rounded-2xl ${i18n.language === 'lo' ? 'font-lao' : ''}`,
+          htmlContainer: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
           confirmButton: 'rounded-xl font-medium px-6 py-3'
         }
       });
     } catch (error) {
       console.error('Upload error:', error);
       Swal.fire({
-        title: 'Upload Failed',
-        text: error.response?.data?.message || 'Failed to upload profile picture',
+        title: t('profileScreen.uploadFailedTitle'),
+        text: error.response?.data?.message || t('profileScreen.uploadFailedText'),
         icon: 'error',
-        confirmButtonColor: '#2563EB', // Changed to blue
+        confirmButtonColor: '#2563EB',
         customClass: {
-          popup: 'rounded-2xl',
+          popup: `rounded-2xl ${i18n.language === 'lo' ? 'font-lao' : ''}`,
+          htmlContainer: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
           confirmButton: 'rounded-xl font-medium px-6 py-3'
         }
       });
@@ -197,17 +204,18 @@ const ProfileScreen = () => {
 
   const handleLogout = () => {
     Swal.fire({
-      title: 'Are you sure?',
-      text: "You will be logged out of your account. You'll need to sign in again to access your profile.",
+      title: t('profileScreen.areYouSureLogout'),
+      text: t('profileScreen.logoutConfirmationText'),
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#ef4444',
       cancelButtonColor: '#6b7280',
-      confirmButtonText: 'Yes, Logout',
-      cancelButtonText: 'Cancel',
+      confirmButtonText: t('profileScreen.yesLogout'),
+      cancelButtonText: t('userHomeScreen.cancel'), // Reusing cancel from userHomeScreen
       reverseButtons: true,
       customClass: {
-        popup: 'rounded-2xl',
+        popup: `rounded-2xl ${i18n.language === 'lo' ? 'font-lao' : ''}`,
+        htmlContainer: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
         confirmButton: 'rounded-xl font-medium px-6 py-3',
         cancelButton: 'rounded-xl font-medium px-6 py-3'
       }
@@ -217,13 +225,14 @@ const ProfileScreen = () => {
         sessionStorage.clear();
 
         Swal.fire({
-          title: 'Logged out!',
-          text: 'You have been successfully logged out and your session has been cleared.',
+          title: t('profileScreen.loggedOutTitle'),
+          text: t('profileScreen.loggedOutSuccessText'),
           icon: 'success',
-          confirmButtonColor: '#2563EB', // Changed to blue
-          confirmButtonText: 'OK',
+          confirmButtonColor: '#2563EB',
+          confirmButtonText: t('bookingScreen.okButton'), // Reusing OK from bookingScreen
           customClass: {
-            popup: 'rounded-2xl',
+            popup: `rounded-2xl ${i18n.language === 'lo' ? 'font-lao' : ''}`,
+            htmlContainer: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
             confirmButton: 'rounded-xl font-medium px-6 py-3'
           }
         }).then(() => {
@@ -234,12 +243,12 @@ const ProfileScreen = () => {
   };
 
   const buttons = [
-    { icon: Edit, label: 'Edit Profile', onClick: handleEditProfile, color: 'bg-blue-600 hover:bg-blue-700', isLogout: false }, // Changed to blue
-    { icon: Shield, label: 'Privacy Policy', onClick: handlePrivacyPolicy, color: 'bg-blue-600 hover:bg-blue-700', isLogout: false }, // Changed to blue
-    { icon: FileText, label: 'Terms & Conditions', onClick: handleTermsConditions, color: 'bg-blue-600 hover:bg-blue-700', isLogout: false }, // Changed to blue
-    { icon: Globe, label: 'Change Language', onClick: handleChangeLanguage, color: 'bg-blue-600 hover:bg-blue-700', isLogout: false }, // Changed to blue
-    { icon: Lock, label: 'Change Password', onClick: handleChangePassword, color: 'bg-blue-600 hover:bg-blue-700', isLogout: false }, // Changed to blue
-    { icon: LogOut, label: 'Logout', onClick: handleLogout, color: 'bg-red-500 hover:bg-red-600', isLogout: true }
+    { icon: Edit, label: t('profileScreen.editProfileButton'), onClick: handleEditProfile, color: 'bg-blue-600 hover:bg-blue-700', isLogout: false },
+    { icon: Shield, label: t('profileScreen.privacyPolicyButton'), onClick: handlePrivacyPolicy, color: 'bg-blue-600 hover:bg-blue-700', isLogout: false },
+    { icon: FileText, label: t('profileScreen.termsConditionsButton'), onClick: handleTermsConditions, color: 'bg-blue-600 hover:bg-blue-700', isLogout: false },
+    { icon: Globe, label: t('profileScreen.changeLanguageButton'), onClick: handleChangeLanguage, color: 'bg-blue-600 hover:bg-blue-700', isLogout: false },
+    { icon: Lock, label: t('profileScreen.changePasswordButton'), onClick: handleChangePassword, color: 'bg-blue-600 hover:bg-blue-700', isLogout: false },
+    { icon: LogOut, label: t('profileScreen.logoutButton'), onClick: handleLogout, color: 'bg-red-500 hover:bg-red-600', isLogout: true }
   ];
 
   // Show loading spinner while fetching data
@@ -248,7 +257,7 @@ const ProfileScreen = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="w-8 h-8 border-4 border-gray-300 border-t-blue-500 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading profile...</p>
+          <p className={`text-gray-600 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>{t('profileScreen.loadingProfile')}</p>
         </div>
       </div>
     );
@@ -258,7 +267,7 @@ const ProfileScreen = () => {
   const getFullName = () => {
     const firstName = user.firstName || '';
     const lastName = user.lastName || '';
-    return `${firstName} ${lastName}`.trim() || 'User';
+    return `${firstName} ${lastName}`.trim() || t('profileScreen.fullNameDefault');
   };
 
   return (
@@ -266,7 +275,7 @@ const ProfileScreen = () => {
       {/* Fixed Header */}
       <div className="fixed top-0 left-0 right-0 bg-white border-b border-gray-100 z-10">
         <div className="px-4 py-4">
-          <h1 className="text-2xl font-bold text-gray-900 text-center">Profile</h1>
+          <h1 className={`text-2xl font-bold text-gray-900 text-center ${i18n.language === 'lo' ? 'font-lao' : ''}`}>{t('profileScreen.headerTitle')}</h1>
         </div>
       </div>
 
@@ -279,7 +288,7 @@ const ProfileScreen = () => {
               {/* Avatar Section */}
               <div className="flex flex-col items-center mb-6">
                 <div className="relative">
-                  <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-blue-700 rounded-full flex items-center justify-center mb-4 shadow-lg overflow-hidden"> {/* Changed gradient to blue */}
+                  <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-blue-700 rounded-full flex items-center justify-center mb-4 shadow-lg overflow-hidden">
                     {user.photo ? (
                       <img
                         src={user.photo}
@@ -293,7 +302,6 @@ const ProfileScreen = () => {
                     ) : (
                       <User className="w-12 h-12 text-white" />
                     )}
-                    {/* Fallback icon if image fails to load */}
                     {user.photo && (
                       <User className="w-12 h-12 text-white" style={{ display: 'none' }} />
                     )}
@@ -306,7 +314,7 @@ const ProfileScreen = () => {
                     {isUploading ? (
                       <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
                     ) : (
-                      <Camera className="w-4 h-4 text-blue-600" /> 
+                      <Camera className="w-4 h-4 text-blue-600" />
                     )}
                   </button>
                   <input
@@ -319,23 +327,23 @@ const ProfileScreen = () => {
                 </div>
 
                 {/* User Info */}
-                <h2 className="text-2xl font-bold text-gray-900 mb-1">{getFullName()}</h2>
+                <h2 className={`text-2xl font-bold text-gray-900 mb-1 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>{getFullName()}</h2>
                 {user.email && (
-                  <p className="text-gray-600 mb-2">{user.email}</p>
+                  <p className={`text-gray-600 mb-2 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>{user.email}</p>
                 )}
                 {user.phoneNumber && (
-                  <p className="text-gray-600 mb-2">{user.phoneNumber}</p>
+                  <p className={`text-gray-600 mb-2 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>{user.phoneNumber}</p>
                 )}
                 {user.department && (
-                  <p className="text-gray-700 text-center text-sm leading-relaxed">{user.department}</p>
+                  <p className={`text-gray-700 text-center text-sm leading-relaxed ${i18n.language === 'lo' ? 'font-lao' : ''}`}>{user.department}</p>
                 )}
               </div>
 
               {/* Status Badge */}
               <div className="flex justify-center">
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"> {/* Changed to blue */}
-                  <div className="w-2 h-2 bg-blue-400 rounded-full mr-2"></div> {/* Changed to blue */}
-                  Active
+                <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
+                  <div className="w-2 h-2 bg-blue-400 rounded-full mr-2"></div>
+                  {t('profileScreen.activeStatus')}
                 </span>
               </div>
             </div>
@@ -348,7 +356,7 @@ const ProfileScreen = () => {
                   <button
                     key={index}
                     onClick={button.onClick}
-                    className={`w-full ${button.color} text-white rounded-xl py-3 px-4 flex items-center ${button.isLogout ? 'justify-center' : 'justify-left'} space-x-3 font-medium transition-all duration-200 hover:shadow-md active:scale-95`}
+                    className={`w-full ${button.color} text-white rounded-xl py-3 px-4 flex items-center ${button.isLogout ? 'justify-center' : 'justify-left'} space-x-3 font-medium transition-all duration-200 hover:shadow-md active:scale-95 ${i18n.language === 'lo' ? 'font-lao' : ''}`}
                   >
                     <IconComponent className="w-5 h-5" />
                     <span>{button.label}</span>

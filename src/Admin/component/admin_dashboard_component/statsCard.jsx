@@ -1,4 +1,9 @@
+import React from 'react';
+import { useTranslation } from 'react-i18next'; // Import useTranslation
+
 const StatsCard = ({ title, value, icon: Icon, color = 'blue' }) => {
+  const { i18n } = useTranslation(); // Initialize translation hook
+
   const colorClasses = {
     blue: 'bg-blue-100 text-blue-600',
     green: 'bg-green-100 text-green-600',
@@ -17,8 +22,8 @@ const StatsCard = ({ title, value, icon: Icon, color = 'blue' }) => {
     <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm font-medium text-gray-600">{title}</p>
-          <p className={`text-3xl font-bold ${textColorClasses[color]}`}>{value}</p>
+          <p className={`text-sm font-medium text-gray-600 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>{title}</p>
+          <p className={`text-3xl font-bold ${textColorClasses[color]} ${i18n.language === 'lo' ? 'font-lao' : ''}`}>{value}</p>
         </div>
         <div className={`p-3 rounded-lg ${colorClasses[color]}`}>
           <Icon className="w-6 h-6" />

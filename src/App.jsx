@@ -27,6 +27,8 @@ import NewRoomPage from './Admin/pages/room/new_room';
 import EditRoomPage from './Admin/pages/room/edit_room';
 import EquipmentPage from './Admin/pages/EquipmentPage';
 import EditBookingScreen from './User/pages/editBookingRoom';
+import ResetPassword from './Auth/resetPassword';
+import ForgotPassword from './Auth/forgotPassword';
 
 
 
@@ -68,7 +70,8 @@ function App() {
         {/* AUTH */}
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<SignUp />} />
-
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/rooms/new" element={<NewRoomPage />} />
         <Route path="/rooms/edit/:id" element={<EditRoomPage />} />
 

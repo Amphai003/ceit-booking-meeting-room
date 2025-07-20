@@ -294,9 +294,9 @@ const NotificationScreen = () => {
                       >
                         <div className="flex items-center gap-2">
                           {formData.target === 'all' && <Users className="w-4 h-4" />}
-                          {formData.target === 'active' && <CheckCircle className="w-4 h-4 text-green-500" />}
+                          {/* {formData.target === 'active' && <CheckCircle className="w-4 h-4 text-green-500" />}
                           {formData.target === 'inactive' && <AlertTriangle className="w-4 h-4 text-yellow-500" />}
-                          {formData.target === 'premium' && <Star className="w-4 h-4 text-purple-500" />}
+                          {formData.target === 'premium' && <Star className="w-4 h-4 text-purple-500" />} */}
                           {formData.target === 'specific' && <User className="w-4 h-4 text-blue-500" />}
                           <span>{targetOptions.find(t => t.value === formData.target)?.label}</span>
                         </div>
@@ -313,9 +313,9 @@ const NotificationScreen = () => {
                               className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-2 first:rounded-t-lg last:rounded-b-lg"
                             >
                               {option.value === 'all' && <Users className="w-4 h-4" />}
-                              {option.value === 'active' && <CheckCircle className="w-4 h-4 text-green-500" />}
+                              {/* {option.value === 'active' && <CheckCircle className="w-4 h-4 text-green-500" />}
                               {option.value === 'inactive' && <AlertTriangle className="w-4 h-4 text-yellow-500" />}
-                              {option.value === 'premium' && <Star className="w-4 h-4 text-purple-500" />}
+                              {option.value === 'premium' && <Star className="w-4 h-4 text-purple-500" />} */}
                               {option.value === 'specific' && <User className="w-4 h-4 text-blue-500" />}
                               <span className="text-sm sm:text-base">{option.label}</span>
                             </button>
