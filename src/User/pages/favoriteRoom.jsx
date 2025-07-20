@@ -1,14 +1,16 @@
-import React, { useState, useEffect,useCallback } from 'react'; // Added useCallback
-import { Heart, MapPin, Users, Loader2, ServerCrash, Search, Wifi, Monitor, Mic } from 'lucide-react'; // Added equipment icons
+import React, { useState, useEffect, useCallback } from 'react';
+import { Heart, MapPin, Users, Loader2, ServerCrash, Search, Wifi, Monitor, Mic } from 'lucide-react';
 import api from '../../api';
 import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
+import { useTranslation } from 'react-i18next'; // Import useTranslation
 
+// Reusing the RoomCard component for displaying favorite rooms
 const FavoriteRoomCard = ({ room, onToggleFavorite, onBook }) => {
   const [imageError, setImageError] = useState(false);
+  const { t, i18n } = useTranslation(); // Initialize translation hook
 
-  // Function to get room photo URL, similar to UserHomeScreen
-  const getRoomPhotoUrl = useCallback(() => { // Memoize with useCallback
+  const getRoomPhotoUrl = useCallback(() => {
     if (room.photos && Array.isArray(room.photos) && room.photos.length > 0) {
       return room.photos[0];
     }
@@ -22,11 +24,10 @@ const FavoriteRoomCard = ({ room, onToggleFavorite, onBook }) => {
       return room.images[0];
     }
     return null;
-  }, [room]); // Depend on room for photo URL changes
+  }, [room]);
 
   const photoUrl = getRoomPhotoUrl();
 
-  // --- New: Utility function for getting equipment icon (copied from UserHomeScreen) ---
   const getEquipmentIcon = useCallback((name) => {
     const lowerName = (name || '').toLowerCase();
     if (lowerName.includes('tv') || lowerName.includes('monitor') || lowerName.includes('projector')) {
@@ -36,10 +37,9 @@ const FavoriteRoomCard = ({ room, onToggleFavorite, onBook }) => {
     } else if (lowerName.includes('wifi') || lowerName.includes('internet')) {
       return <Wifi className="w-3 h-3 text-gray-500" />;
     } else {
-      return null; // Return null if no specific icon
+      return null;
     }
   }, []);
-  // --- End New ---
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow cursor-pointer">
@@ -47,63 +47,63 @@ const FavoriteRoomCard = ({ room, onToggleFavorite, onBook }) => {
         {photoUrl && !imageError ? (
           <img
             src={photoUrl}
-            alt={room.name}
+            alt={room.name || t('roomCard.unnamedRoom')}
             className="w-full h-full object-cover"
             onError={() => setImageError(true)}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
-            <div className="text-4xl font-bold text-gray-600">
+            <div className={`text-4xl font-bold text-gray-600 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
               {room.name ? room.name.substring(0, 2).toUpperCase() : 'RM'}
             </div>
           </div>
         )}
         <button
           onClick={(e) => {
-            e.stopPropagation(); // Prevent triggering the card click
+            e.stopPropagation();
             onToggleFavorite(room);
           }}
           className="absolute top-3 right-3 p-2 rounded-full transition-colors backdrop-blur-sm bg-blue-600/20 hover:bg-white/20"
         >
-          <Heart className="w-5 h-5 fill-red-500 text-red-500" /> {/* Always filled as it's a favorite */}
+          <Heart className="w-5 h-5 fill-red-500 text-red-500" />
         </button>
       </div>
 
       <div className="p-4">
         <div className="flex items-start justify-between mb-2">
-          <h3 className="font-semibold text-lg truncate">{room.name || 'Unnamed Room'}</h3>
+          <h3 className={`font-semibold text-lg truncate ${i18n.language === 'lo' ? 'font-lao' : ''}`}>{room.name || t('roomCard.unnamedRoom')}</h3>
         </div>
 
-        <div className="flex items-center space-x-2 text-sm text-gray-600 mb-2">
-          <span>{room.roomType || 'Room'}</span>
+        <div className={`flex items-center space-x-2 text-sm text-gray-600 mb-2 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
+          <span>{room.roomType || t('roomCard.roomTypeDefault')}</span>
           <span>•</span>
           <div className="flex items-center space-x-1">
             <MapPin className="w-3 h-3" />
-            <span>{room.location || 'Location'}</span>
+            <span>{room.location || t('roomCard.locationDefault')}</span>
           </div>
         </div>
 
-        <div className="flex items-center space-x-2 mb-3">
+        <div className={`flex items-center space-x-2 mb-3 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
           <div className="flex items-center space-x-1">
             <Users className="w-4 h-4 text-gray-500" />
-            <span className="text-sm text-gray-600">{room.capacity || 0} capacity</span>
+            <span className="text-sm text-gray-600">{room.capacity || 0} {t('roomCard.capacityUnit')}</span>
           </div>
         </div>
 
-        <div className="text-gray-600">
+        <div className={`text-gray-600 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
           {room.equipment?.length > 0 && (
             <div>
-              <p className="text-sm font-medium text-gray-700 mb-1">Equipment:</p> {/* Added a heading */}
-              <ul className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm"> {/* Using ul for list */}
+              <p className={`text-sm font-medium text-gray-700 mb-1 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>{t('roomCard.equipmentLabel')}</p>
+              <ul className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
                 {room.equipment.map((item, index) => {
-                  const equipmentName = item.equipment?.name || item.name || 'Unknown'; // Prioritize nested name
+                  const equipmentName = item.equipment?.name || item.name || 'Unknown';
                   const quantity = item.quantity || 0;
                   const icon = getEquipmentIcon(equipmentName);
 
                   return (
                     <li key={`eq-${index}`} className="flex items-center space-x-1">
                       {icon}
-                      <span>{equipmentName} ({quantity})</span>
+                      <span className={i18n.language === 'lo' ? 'font-lao' : ''}>{equipmentName} ({quantity})</span>
                     </li>
                   );
                 })}
@@ -113,8 +113,8 @@ const FavoriteRoomCard = ({ room, onToggleFavorite, onBook }) => {
         </div>
 
         {room.note && (
-          <p className="text-sm text-gray-600 leading-relaxed line-clamp-2 mt-2">
-            <span className="font-medium">Note:</span> {room.note}
+          <p className={`text-sm text-gray-600 leading-relaxed line-clamp-2 mt-2 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
+            <span className="font-medium">{t('roomCard.noteLabel')}</span> {room.note}
           </p>
         )}
 
@@ -124,9 +124,9 @@ const FavoriteRoomCard = ({ room, onToggleFavorite, onBook }) => {
               e.stopPropagation();
               onBook(room);
             }}
-            className="bg-blue-600 text-white px-6 py-2 rounded-full text-sm font-medium hover:bg-blue-700 transition-colors"
+            className={`bg-blue-600 text-white px-6 py-2 rounded-full text-sm font-medium hover:bg-blue-700 transition-colors ${i18n.language === 'lo' ? 'font-lao' : ''}`}
           >
-            Book Now
+            {t('roomCard.bookNowButton')}
           </button>
         </div>
       </div>
@@ -134,32 +134,31 @@ const FavoriteRoomCard = ({ room, onToggleFavorite, onBook }) => {
   );
 };
 
-// --- FavoriteRoomsScreen component remains the same as before, no changes needed here directly ---
 const FavoriteRoomsScreen = () => {
   const [favoriteItems, setFavoriteItems] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation(); // Initialize translation hook
 
   const fetchFavoriteRooms = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       const response = await api.get('/favorite-rooms');
-      // Ensure the room object itself is spread, and isFavorite is explicitly set
       const transformedData = (response.data || []).map(item => ({
-        ...item.room, // This ensures all room properties are at the top level
-        isFavorite: true // This is crucial for consistency with UserHomeScreen's favorite state
+        ...item.room,
+        isFavorite: true
       }));
       setFavoriteItems(transformedData);
     } catch (err) {
       console.error("Failed to fetch favorite rooms:", err);
-      setError(err.message || "Could not load your favorite rooms.");
+      setError(err.message || t('favoriteRoomsScreen.couldNotLoadFavorites'));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]); // Add t to useCallback dependencies
 
   useEffect(() => {
     fetchFavoriteRooms();
@@ -167,13 +166,20 @@ const FavoriteRoomsScreen = () => {
 
   const handleToggleFavorite = async (roomToRemove) => {
     const result = await Swal.fire({
-      title: 'Are you sure?',
-      text: `Remove "${roomToRemove.name}" from your favorites?`,
+      title: t('favoriteRoomsScreen.areYouSure'),
+      text: t('favoriteRoomsScreen.removeFavoriteConfirmation', { roomName: roomToRemove.name }),
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#2563EB',
       cancelButtonColor: '#d33',
-      confirmButtonText: 'Yes, remove it!'
+      confirmButtonText: t('favoriteRoomsScreen.yesRemoveIt'),
+      cancelButtonText: t('userHomeScreen.cancel'), // Reusing cancel from userHomeScreen
+      customClass: {
+        title: i18n.language === 'lo' ? 'font-lao' : '',
+        htmlContainer: i18n.language === 'lo' ? 'font-lao' : '',
+        confirmButton: i18n.language === 'lo' ? 'font-lao' : '',
+        cancelButton: i18n.language === 'lo' ? 'font-lao' : ''
+      }
     });
 
     if (result.isConfirmed) {
@@ -184,19 +190,29 @@ const FavoriteRoomsScreen = () => {
         setFavoriteItems(currentItems =>
           currentItems.filter(room => room._id !== roomToRemove._id)
         );
-        Swal.fire(
-          'Removed!',
-          `"${roomToRemove.name}" has been removed from your favorites.`,
-          'success'
-        );
+        Swal.fire({
+          title: t('favoriteRoomsScreen.removedTitle'),
+          text: t('favoriteRoomsScreen.removedSuccessText', { roomName: roomToRemove.name }),
+          icon: 'success',
+          customClass: {
+            title: i18n.language === 'lo' ? 'font-lao' : '',
+            htmlContainer: i18n.language === 'lo' ? 'font-lao' : '',
+            confirmButton: i18n.language === 'lo' ? 'font-lao' : ''
+          }
+        });
       } catch (err) {
         console.error("Failed to unfavorite room:", err);
-        Swal.fire(
-          'Error!',
-          'Could not remove the room. Please try again.',
-          'error'
-        );
-        fetchFavoriteRooms(); // Re-fetch to ensure state is accurate
+        Swal.fire({
+          title: t('favoriteRoomsScreen.errorRemovingTitle'),
+          text: t('favoriteRoomsScreen.errorRemovingText'),
+          icon: 'error',
+          customClass: {
+            title: i18n.language === 'lo' ? 'font-lao' : '',
+            htmlContainer: i18n.language === 'lo' ? 'font-lao' : '',
+            confirmButton: i18n.language === 'lo' ? 'font-lao' : ''
+          }
+        });
+        fetchFavoriteRooms();
       }
     }
   };
@@ -207,9 +223,14 @@ const FavoriteRoomsScreen = () => {
     } else {
       Swal.fire({
         icon: 'info',
-        title: 'Room Not Available',
-        text: 'This room is currently not available for booking',
-        confirmButtonColor: '#2563EB'
+        title: t('userHomeScreen.roomNotAvailableTitle'), // Reusing translation from UserHomeScreen
+        text: t('userHomeScreen.roomNotAvailableText'), // Reusing translation from UserHomeScreen
+        confirmButtonColor: '#2563EB',
+        customClass: {
+          title: i18n.language === 'lo' ? 'font-lao' : '',
+          htmlContainer: i18n.language === 'lo' ? 'font-lao' : '',
+          confirmButton: i18n.language === 'lo' ? 'font-lao' : ''
+        }
       });
     }
   };
@@ -224,7 +245,7 @@ const FavoriteRoomsScreen = () => {
       return (
         <div className="flex flex-col items-center justify-center py-16">
           <Loader2 className="w-12 h-12 text-blue-500 animate-spin mb-4" />
-          <p className="text-gray-600">Loading Favorites...</p>
+          <p className={`text-gray-600 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>{t('favoriteRoomsScreen.loadingFavorites')}</p>
         </div>
       );
     }
@@ -233,13 +254,13 @@ const FavoriteRoomsScreen = () => {
       return (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <ServerCrash className="w-16 h-16 text-red-400 mb-4" />
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">Something went wrong</h3>
-          <p className="text-gray-600 mb-4">{error}</p>
+          <h3 className={`text-xl font-semibold text-gray-900 mb-2 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>{t('favoriteRoomsScreen.somethingWentWrong')}</h3>
+          <p className={`text-gray-600 mb-4 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>{error}</p>
           <button
             onClick={fetchFavoriteRooms}
-            className="bg-blue-600 text-white px-5 py-2 rounded-full text-sm font-medium hover:bg-blue-700 transition-colors"
+            className={`bg-blue-600 text-white px-5 py-2 rounded-full text-sm font-medium hover:bg-blue-700 transition-colors ${i18n.language === 'lo' ? 'font-lao' : ''}`}
           >
-            Try Again
+            {t('userHomeScreen.tryAgain')}
           </button>
         </div>
       );
@@ -249,9 +270,9 @@ const FavoriteRoomsScreen = () => {
       return (
         <div className="flex flex-col items-center justify-center py-16">
           <Heart className="w-16 h-16 text-gray-300 mb-4" />
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">No Favorite Rooms</h3>
-          <p className="text-gray-600 text-center">
-            {searchQuery ? 'No rooms match your search.' : 'Start adding rooms to your favorites to see them here.'}
+          <h3 className={`text-xl font-semibold text-gray-900 mb-2 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>{t('favoriteRoomsScreen.noFavoriteRooms')}</h3>
+          <p className={`text-gray-600 text-center ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
+            {searchQuery ? t('favoriteRoomsScreen.noRoomsMatchSearch') : t('favoriteRoomsScreen.startAddingFavorites')}
           </p>
         </div>
       );
@@ -259,8 +280,8 @@ const FavoriteRoomsScreen = () => {
 
     return (
       <>
-        <p className="text-gray-600 text-sm mb-4">
-          {filteredItems.length} favorite meeting room{filteredItems.length !== 1 ? 's' : ''}
+        <p className={`text-gray-600 text-sm mb-4 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
+          {t('favoriteRoomsScreen.favoriteRoomsCount', { count: filteredItems.length, count_plural: filteredItems.length !== 1 ? 's' : '' })}
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredItems.map(room => (
@@ -281,7 +302,7 @@ const FavoriteRoomsScreen = () => {
       {/* Header */}
       <div className="bg-white border-b border-gray-100 sticky top-0 z-40">
         <div className="px-4 py-4 max-w-5xl mx-auto text-center">
-          <h1 className="text-2xl font-bold text-gray-900">Favorite Rooms</h1>
+          <h1 className={`text-2xl font-bold text-gray-900 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>{t('favoriteRoomsScreen.headerTitle')}</h1>
         </div>
       </div>
 
@@ -292,10 +313,10 @@ const FavoriteRoomsScreen = () => {
             <Search className="w-5 h-5 text-gray-400 mr-2" />
             <input
               type="text"
-              placeholder="Search in your favorites..."
+              placeholder={t('favoriteRoomsScreen.searchPlaceholder')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="flex-1 bg-transparent text-gray-600 placeholder-gray-400 outline-none"
+              className={`flex-1 bg-transparent text-gray-600 placeholder-gray-400 outline-none ${i18n.language === 'lo' ? 'font-lao' : ''}`}
             />
           </div>
         </div>

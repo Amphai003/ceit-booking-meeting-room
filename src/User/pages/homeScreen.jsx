@@ -18,15 +18,19 @@ import {
 import api from '../../api';
 import Swal from 'sweetalert2';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next'; // Import useTranslation
 
 const UserHomeScreen = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('All room');
+  const { t, i18n } = useTranslation(); // Initialize translation hook
+
+  const [activeTab, setActiveTab] = useState(t('userHomeScreen.allRoomTab')); // Use translation key for initial state
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [favoriteLoading, setFavoriteLoading] = useState({}); // Track loading state for individual rooms
+  const [searchTerm, setSearchTerm] = useState(''); // New state for search term
   const roomsPerPage = 6;
 
   const fetchRooms = async () => {
@@ -49,25 +53,35 @@ const UserHomeScreen = () => {
       if (roomsData && roomsData.length > 0) {
         Swal.fire({
           icon: 'success',
-          title: 'Rooms Loaded!',
-          text: `Successfully loaded ${roomsData.length} rooms`,
+          title: t('userHomeScreen.roomsLoadedTitle'),
+          text: t('userHomeScreen.roomsLoadedText', { count: roomsData.length }),
           timer: 2000,
           timerProgressBar: true,
           showConfirmButton: false,
           toast: true,
-          position: 'top-end'
+          position: 'top-end',
+          customClass: {
+            title: i18n.language === 'lo' ? 'font-lao' : '',
+            htmlContainer: i18n.language === 'lo' ? 'font-lao' : '',
+            confirmButton: i18n.language === 'lo' ? 'font-lao' : ''
+          }
         });
       }
     } catch (err) {
-      setError(err.message || 'Failed to fetch rooms');
+      setError(err.message || t('userHomeScreen.failedToFetchRooms'));
       console.error('Error fetching rooms:', err);
 
       Swal.fire({
         icon: 'error',
-        title: 'Failed to Load Rooms',
-        text: err.message || 'Unable to fetch rooms from server',
-        confirmButtonText: 'Try Again',
-        confirmButtonColor: '#2563EB' // Changed from #000000 to blue
+        title: t('userHomeScreen.failedToFetchRooms'),
+        text: err.message || t('userHomeScreen.unableToFetchRoomsFromServer'),
+        confirmButtonText: t('userHomeScreen.tryAgain'),
+        confirmButtonColor: '#2563EB',
+        customClass: {
+          title: i18n.language === 'lo' ? 'font-lao' : '',
+          htmlContainer: i18n.language === 'lo' ? 'font-lao' : '',
+          confirmButton: i18n.language === 'lo' ? 'font-lao' : ''
+        }
       }).then((result) => {
         if (result.isConfirmed) {
           fetchRooms();
@@ -83,9 +97,21 @@ const UserHomeScreen = () => {
   }, []);
 
   const filteredRooms = rooms.filter(room => {
-    if (activeTab === 'Available room') {
-      return room.status === 'available';
+    // Filter by active tab (All Rooms or Available Rooms)
+    if (activeTab === t('userHomeScreen.availableRoomTab') && room.status !== 'available') {
+      return false;
     }
+
+    // Filter by search term
+    if (searchTerm) {
+      const lowerCaseSearchTerm = searchTerm.toLowerCase();
+      const nameMatch = room.name?.toLowerCase().includes(lowerCaseSearchTerm);
+      const locationMatch = room.location?.toLowerCase().includes(lowerCaseSearchTerm);
+      const capacityMatch = room.capacity?.toString().includes(lowerCaseSearchTerm); // Convert capacity to string for search
+
+      return nameMatch || locationMatch || capacityMatch;
+    }
+
     return true;
   });
 
@@ -138,13 +164,18 @@ const UserHomeScreen = () => {
       // Show success message
       Swal.fire({
         icon: 'success',
-        title: newFavoriteStatus ? 'Added to Favorites!' : 'Removed from Favorites!',
-        text: `"${room.name}" has been ${newFavoriteStatus ? 'added to' : 'removed from'} your favorites`,
+        title: newFavoriteStatus ? t('userHomeScreen.addedToFavoritesTitle') : t('userHomeScreen.removedFromFavoritesTitle'),
+        text: newFavoriteStatus ? t('userHomeScreen.addedToFavoritesText', { roomName: room.name }) : t('userHomeScreen.removedFromFavoritesText', { roomName: room.name }),
         timer: 2000,
         timerProgressBar: true,
         showConfirmButton: false,
         toast: true,
-        position: 'top-end'
+        position: 'top-end',
+        customClass: {
+          title: i18n.language === 'lo' ? 'font-lao' : '',
+          htmlContainer: i18n.language === 'lo' ? 'font-lao' : '',
+          confirmButton: i18n.language === 'lo' ? 'font-lao' : ''
+        }
       });
 
     } catch (error) {
@@ -153,9 +184,14 @@ const UserHomeScreen = () => {
       // Show error message
       Swal.fire({
         icon: 'error',
-        title: 'Error',
-        text: `Failed to ${newFavoriteStatus ? 'add to' : 'remove from'} favorites. Please try again.`,
-        confirmButtonColor: '#2563EB' // Changed from #000000 to blue
+        title: t('userHomeScreen.errorTitle'),
+        text: newFavoriteStatus ? t('userHomeScreen.failedAddToFavorites') : t('userHomeScreen.failedRemoveFromFavorites'),
+        confirmButtonColor: '#2563EB',
+        customClass: {
+          title: i18n.language === 'lo' ? 'font-lao' : '',
+          htmlContainer: i18n.language === 'lo' ? 'font-lao' : '',
+          confirmButton: i18n.language === 'lo' ? 'font-lao' : ''
+        }
       });
     } finally {
       // Remove loading state for this room
@@ -173,9 +209,14 @@ const UserHomeScreen = () => {
     } else {
       Swal.fire({
         icon: 'info',
-        title: 'Room Not Available',
-        text: 'This room is currently not available for booking',
-        confirmButtonColor: '#2563EB' // Changed from #000000 to blue
+        title: t('userHomeScreen.roomNotAvailableTitle'),
+        text: t('userHomeScreen.roomNotAvailableText'),
+        confirmButtonColor: '#2563EB',
+        customClass: {
+          title: i18n.language === 'lo' ? 'font-lao' : '',
+          htmlContainer: i18n.language === 'lo' ? 'font-lao' : '',
+          confirmButton: i18n.language === 'lo' ? 'font-lao' : ''
+        }
       });
     }
   };
@@ -196,13 +237,13 @@ const UserHomeScreen = () => {
   const getStatusText = (status) => {
     switch (status?.toLowerCase()) {
       case 'available':
-        return 'Available Now';
+        return t('userHomeScreen.availableNow');
       case 'occupied':
-        return 'Unavailable Now';
+        return t('userHomeScreen.unavailableNow');
       case 'maintenance':
-        return 'Under Maintenance';
+        return t('userHomeScreen.underMaintenance');
       default:
-        return 'Unknown Status';
+        return t('userHomeScreen.unknownStatus');
     }
   };
 
@@ -223,8 +264,8 @@ const UserHomeScreen = () => {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div> {/* Changed to blue-500 */}
-          <p className="text-gray-600">Loading rooms...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className={`text-gray-600 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>{t('userHomeScreen.loadingRooms')}</p>
         </div>
       </div>
     );
@@ -235,28 +276,34 @@ const UserHomeScreen = () => {
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
           <div className="text-red-600 text-6xl mb-4">⚠️</div>
-          <p className="text-red-600 mb-4 text-lg">Error loading rooms</p>
-          <p className="text-gray-600 mb-6">{error}</p>
+          <p className={`text-red-600 mb-4 text-lg ${i18n.language === 'lo' ? 'font-lao' : ''}`}>{t('userHomeScreen.errorLoadingRooms')}</p>
+          <p className={`text-gray-600 mb-6 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>{error}</p>
           <button
             onClick={() => {
               Swal.fire({
-                title: 'Retry Loading Rooms?',
-                text: 'This will attempt to fetch rooms from the server again.',
+                title: t('userHomeScreen.retryLoadingRoomsQuestion'),
+                text: t('userHomeScreen.reloadRoomsFromServerText'),
                 icon: 'question',
                 showCancelButton: true,
-                confirmButtonColor: '#2563EB', // Changed to blue
+                confirmButtonColor: '#2563EB',
                 cancelButtonColor: '#6B7280',
-                confirmButtonText: 'Yes, retry!',
-                cancelButtonText: 'Cancel'
+                confirmButtonText: t('userHomeScreen.yesRetry'),
+                cancelButtonText: t('userHomeScreen.cancel'),
+                customClass: {
+                  title: i18n.language === 'lo' ? 'font-lao' : '',
+                  htmlContainer: i18n.language === 'lo' ? 'font-lao' : '',
+                  confirmButton: i18n.language === 'lo' ? 'font-lao' : '',
+                  cancelButton: i18n.language === 'lo' ? 'font-lao' : ''
+                }
               }).then((result) => {
                 if (result.isConfirmed) {
                   fetchRooms();
                 }
               });
             }}
-            className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors" // Changed to blue
+            className={`bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors ${i18n.language === 'lo' ? 'font-lao' : ''}`}
           >
-            Try Again
+            {t('userHomeScreen.tryAgain')}
           </button>
         </div>
       </div>
@@ -272,13 +319,19 @@ const UserHomeScreen = () => {
             <Search className="w-5 h-5 text-gray-400 mr-2" />
             <input
               type="text"
-              placeholder="Where are you going?"
-              className="flex-1 bg-transparent text-gray-600 placeholder-gray-400 outline-none"
+              placeholder={t('userHomeScreen.searchPlaceholder')}
+              className={`flex-1 bg-transparent text-gray-600 placeholder-gray-400 outline-none ${i18n.language === 'lo' ? 'font-lao' : ''}`}
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1); // Reset to first page on search
+              }}
             />
           </div>
-          <button className="absolute right-2 top-2 bg-blue-600 text-white rounded-full px-4 py-2 flex items-center space-x-1 hover:bg-blue-700"> {/* Changed to blue */}
+          {/* Filter button - functionality not implemented in this update */}
+          <button className={`absolute right-2 top-2 bg-blue-600 text-white rounded-full px-4 py-2 flex items-center space-x-1 hover:bg-blue-700 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
             <SlidersHorizontal className="w-4 h-4" />
-            <span className="text-sm">Filter</span>
+            <span className="text-sm">{t('userHomeScreen.filterButton')}</span>
           </button>
         </div>
       </div>
@@ -286,7 +339,7 @@ const UserHomeScreen = () => {
       {/* Tab Navigation */}
       <div className="px-4 mb-4 w-full max-w-5xl mx-auto">
         <div className="flex flex-wrap gap-2">
-          {['All room', 'Available room'].map((tab) => (
+          {[t('userHomeScreen.allRoomTab'), t('userHomeScreen.availableRoomTab')].map((tab) => (
             <button
               key={tab}
               onClick={() => {
@@ -294,9 +347,9 @@ const UserHomeScreen = () => {
                 setCurrentPage(1);
               }}
               className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${activeTab === tab
-                ? 'bg-blue-600 text-white hover:bg-blue-700' // Changed to blue
+                ? 'bg-blue-600 text-white hover:bg-blue-700'
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
+                } ${i18n.language === 'lo' ? 'font-lao' : ''}`}
             >
               {tab}
             </button>
@@ -309,32 +362,38 @@ const UserHomeScreen = () => {
         {currentRooms.length === 0 ? (
           <div className="text-center py-12">
             <div className="text-gray-400 text-6xl mb-4">🏢</div>
-            <p className="text-gray-500 text-lg mb-2">No rooms found</p>
-            <p className="text-gray-400 text-sm">
-              {activeTab === 'Available room'
-                ? 'No available rooms at the moment'
-                : 'No rooms to display'}
+            <p className={`text-gray-500 text-lg mb-2 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>{t('userHomeScreen.noRoomsFound')}</p>
+            <p className={`text-gray-400 text-sm ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
+              {activeTab === t('userHomeScreen.availableRoomTab')
+                ? t('userHomeScreen.noAvailableRoomsMoment')
+                : t('userHomeScreen.noRoomsToDisplay')}
             </p>
             <button
               onClick={() => {
                 Swal.fire({
-                  title: 'Refresh Room List?',
-                  text: 'This will reload all rooms from the server.',
+                  title: t('userHomeScreen.refreshRoomListQuestion'),
+                  text: t('userHomeScreen.reloadRoomsFromServerText'),
                   icon: 'question',
                   showCancelButton: true,
-                  confirmButtonColor: '#2563EB', // Changed to blue
+                  confirmButtonColor: '#2563EB',
                   cancelButtonColor: '#6B7280',
-                  confirmButtonText: 'Yes, refresh!',
-                  cancelButtonText: 'Cancel'
+                  confirmButtonText: t('userHomeScreen.yesRefresh'),
+                  cancelButtonText: t('userHomeScreen.cancel'),
+                  customClass: {
+                    title: i18n.language === 'lo' ? 'font-lao' : '',
+                    htmlContainer: i18n.language === 'lo' ? 'font-lao' : '',
+                    confirmButton: i18n.language === 'lo' ? 'font-lao' : '',
+                    cancelButton: i18n.language === 'lo' ? 'font-lao' : ''
+                  }
                 }).then((result) => {
                   if (result.isConfirmed) {
                     fetchRooms();
                   }
                 });
               }}
-              className="mt-4 bg-gray-100 text-gray-600 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors"
+              className={`mt-4 bg-gray-100 text-gray-600 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors ${i18n.language === 'lo' ? 'font-lao' : ''}`}
             >
-              Refresh
+              {t('userHomeScreen.refreshButton')}
             </button>
           </div>
         ) : (
@@ -371,14 +430,14 @@ const UserHomeScreen = () => {
                       disabled={isLoading}
                       className={`absolute top-3 right-3 p-2 rounded-full transition-colors backdrop-blur-sm ${isLoading
                         ? 'bg-gray-300/50 cursor-not-allowed'
-                        : 'hover:bg-white/20 bg-blue-600/20' // Changed to blue
+                        : 'hover:bg-white/20 bg-blue-600/20'
                         }`}
                     >
                       {isLoading ? (
                         <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
                       ) : (
                         <Heart
-                          className={`w-5 h-5 ${room.isFavorite
+                          className={`w-5 h-5 ${room.isFavorited // Use room.isFavorited here
                             ? 'fill-red-500 text-red-500'
                             : 'text-gray-400 hover:text-red-500'
                             }`}
@@ -389,37 +448,35 @@ const UserHomeScreen = () => {
 
                   <div className="p-4">
                     <div className="flex items-start justify-between mb-2">
-                      <h3 className="font-semibold text-lg truncate">{room.name || 'Unnamed Room'}</h3>
+                      <h3 className={`font-semibold text-lg truncate ${i18n.language === 'lo' ? 'font-lao' : ''}`}>{room.name || t('userHomeScreen.unnamedRoom')}</h3>
                       <div className={`flex items-center space-x-1 mb-3`}>
                         <div className={`w-2 h-2 rounded-full ${getStatusColor(room.status).split(' ')[1]}`}></div>
-                        <span className={`text-sm ${getStatusColor(room.status).split(' ')[0]}`}>
+                        <span className={`text-sm ${getStatusColor(room.status).split(' ')[0]} ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
                           {getStatusText(room.status)}
                         </span>
                       </div>
-
                     </div>
 
-                    <div className="flex items-center space-x-2 text-sm text-gray-600 mb-2">
-                      <span>{room.roomType || 'Room'}</span>
+                    <div className={`flex items-center space-x-2 text-sm text-gray-600 mb-2 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
+                      <span>{room.roomType || t('userHomeScreen.roomTypeDefault')}</span>
                       <span>•</span>
                       <div className="flex items-center space-x-1">
                         <MapPin className="w-3 h-3" />
-                        <span>{room.location || 'Location'}</span>
+                        <span>{room.location || t('userHomeScreen.locationDefault')}</span>
                       </div>
                     </div>
 
-                    <div className="flex items-center space-x-2 mb-3">
+                    <div className={`flex items-center space-x-2 mb-3 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
                       <div className="flex items-center space-x-1">
                         <Users className="w-4 h-4 text-gray-500" />
-                        <span className="text-sm text-gray-600">{room.capacity || 0} people</span>
+                        <span className="text-sm text-gray-600">{room.capacity || 0} {t('userHomeScreen.capacityUnit')}</span>
                       </div>
                     </div>
 
-                    <div className="text-gray-600">
-
+                    <div className={`text-gray-600 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
                       {room.equipment?.length > 0 && (
                         <div>
-                          Equipment: {room.equipment.map((item, index) => {
+                          {t('userHomeScreen.equipmentLabel')} {room.equipment.map((item, index) => {
                             const name = item.equipment?.name || 'Unknown';
                             return (
                               <span key={`eq-${index}`}>
@@ -433,8 +490,8 @@ const UserHomeScreen = () => {
                     </div>
 
                     {room.note && (
-                      <p className="text-sm text-gray-600 leading-relaxed line-clamp-2">
-                        Note: {room.note}
+                      <p className={`text-sm text-gray-600 leading-relaxed line-clamp-2 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
+                        {t('userHomeScreen.noteLabel')} {room.note}
                       </p>
                     )}
                   </div>
@@ -453,10 +510,10 @@ const UserHomeScreen = () => {
               className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${currentPage === 1
                 ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
+                } ${i18n.language === 'lo' ? 'font-lao' : ''}`}
             >
               <ChevronLeft className="w-4 h-4" />
-              <span>Previous</span>
+              <span>{t('userHomeScreen.previousPage')}</span>
             </button>
 
             <div className="flex items-center space-x-2">
@@ -465,9 +522,9 @@ const UserHomeScreen = () => {
                   key={pageNum}
                   onClick={() => setCurrentPage(pageNum)}
                   className={`w-10 h-10 rounded-lg transition-colors ${currentPage === pageNum
-                    ? 'bg-blue-600 text-white hover:bg-blue-700' // Changed to blue
+                    ? 'bg-blue-600 text-white hover:bg-blue-700'
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }`}
+                    } ${i18n.language === 'lo' ? 'font-lao' : ''}`}
                 >
                   {pageNum}
                 </button>
@@ -480,9 +537,9 @@ const UserHomeScreen = () => {
               className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${currentPage === totalPages
                 ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
+                } ${i18n.language === 'lo' ? 'font-lao' : ''}`}
             >
-              <span>Next</span>
+              <span>{t('userHomeScreen.nextPage')}</span>
               <ChevronRight className="w-4 h-4" />
             </button>
           </div>
@@ -490,8 +547,12 @@ const UserHomeScreen = () => {
 
         {/* Results Summary */}
         {filteredRooms.length > 0 && (
-          <div className="text-center text-sm text-gray-500 pb-6">
-            Showing {startIndex + 1}-{Math.min(endIndex, filteredRooms.length)} of {filteredRooms.length} rooms
+          <div className={`text-center text-sm text-gray-500 pb-6 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
+            {t('userHomeScreen.showingRoomsSummary', {
+              start: startIndex + 1,
+              end: Math.min(endIndex, filteredRooms.length),
+              total: filteredRooms.length
+            })}
           </div>
         )}
       </div>
