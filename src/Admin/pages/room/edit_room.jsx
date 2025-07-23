@@ -25,6 +25,8 @@ const EditRoomPage = () => {
         const formatted = eqRes.data.map(eq => ({
           id: eq._id,
           name: eq.name,
+          availableQuantity: eq.quantity, // Pass available quantity
+          description: eq.description,     // Pass description
         }));
         setEquipmentOptions(formatted);
       } catch (err) {
@@ -137,7 +139,7 @@ const EditRoomPage = () => {
   }
 
   if (!room) {
-    return null;
+    return null; // Or show an error message/redirect
   }
 
   return (

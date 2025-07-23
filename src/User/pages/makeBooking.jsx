@@ -8,16 +8,22 @@ import {
   Trash,
   X,
   Check,
-  // Removed unused icons: Wifi, Monitor, Mic,
-  Users, // Keep Users for capacity display
-  MapPin
+  Users,
+  MapPin,
+  Eye,
 } from 'lucide-react';
 import api from '../../api';
 import Swal from 'sweetalert2';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
+import { useTranslation } from 'react-i18next'; // Import useTranslation
+
+// Import the new RoomCalendarModal component
+import RoomCalendarModal from '../component/RoomCalendarModal';
 
 const MakeBookingScreen = () => {
+  const { t, i18n } = useTranslation(); // Initialize translation hook
+
   const { state } = useLocation();
   const { bookingId } = useParams();
   const navigate = useNavigate();
@@ -25,17 +31,16 @@ const MakeBookingScreen = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
-  const [timeError, setTimeError] = useState(null); // State for time validation
-  const [attendeesError, setAttendeesError] = useState(null); // NEW: State for attendees validation
+  const [timeError, setTimeError] = useState(null);
+  const [attendeesError, setAttendeesError] = useState(null);
+  const [showCalendarModal, setShowCalendarModal] = useState(false);
 
-  // Helper function to ensure valid time format (HH:MM)
   const formatTime = (timeString) => {
     if (!timeString) return '08:00';
     const [hours, minutes] = timeString.split(':');
     return `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}`;
   };
 
-  // Form state - NEW: Added numberOfAttendees
   const [formData, setFormData] = useState({
     bookingDate: new Date(),
     startTime: '08:00',
@@ -43,25 +48,21 @@ const MakeBookingScreen = () => {
     purpose: '',
     requestedEquipment: [],
     equipmentNotes: '',
-    numberOfAttendees: 0 // NEW: Default to 0 attendees
+    numberOfAttendees: 0,
   });
 
-  // Room details
   const [room, setRoom] = useState(state?.room || null);
   const [bookingDetails, setBookingDetails] = useState(null);
 
-  // Fetch booking details if in edit mode
   useEffect(() => {
     const fetchData = async () => {
       try {
         setIsLoading(true);
 
         if (bookingId) {
-          // Fetch booking details
           const response = await api.get(`/bookings/${bookingId}`);
           setBookingDetails(response.data.data);
 
-          // Set form data from existing booking
           const booking = response.data.data;
           setFormData({
             bookingDate: new Date(booking.bookingDate),
@@ -70,33 +71,37 @@ const MakeBookingScreen = () => {
             purpose: booking.purpose || '',
             requestedEquipment: booking.requestedEquipment || [],
             equipmentNotes: booking.equipmentNotes || '',
-            numberOfAttendees: booking.numberOfAttendees || 0 // NEW: Populate numberOfAttendees
+            numberOfAttendees: booking.numberOfAttendees || 0,
           });
 
-          // If room data wasn't passed in state, fetch it
           if (!state?.room) {
-            const roomResponse = await api.get(`/rooms/${booking.roomId._id}`); // Use booking.roomId._id
+            const roomResponse = await api.get(`/rooms/${booking.roomId._id}`);
             setRoom(roomResponse.data.data);
           } else {
             setRoom(state.room);
           }
-          setIsEditMode(true); // Automatically enable edit mode when a bookingId is present
+          setIsEditMode(true);
         } else if (state?.room) {
-          // New booking with room data from state
           setRoom(state.room);
         } else {
-          throw new Error('No room or booking information provided');
+          throw new Error(t('makeBookingScreen.noRoomInfoAvailable'));
         }
       } catch (err) {
-        setError(err.message || 'Failed to load booking data');
+        setError(err.message || t('makeBookingScreen.couldNotLoadBookingInfo'));
         console.error('Error:', err);
 
         Swal.fire({
           icon: 'error',
-          title: 'Error Loading Booking',
-          text: err.message || 'Could not load booking information',
-          confirmButtonText: 'Go Back',
-          confirmButtonColor: '#000000'
+          title: t('makeBookingScreen.errorLoadingBooking'),
+          text: err.message || t('makeBookingScreen.couldNotLoadBookingInfo'),
+          confirmButtonText: t('makeBookingScreen.goBack'),
+          confirmButtonColor: '#000000',
+          customClass: {
+            popup: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
+            title: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
+            htmlContainer: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
+            confirmButton: `${i18n.language === 'lo' ? 'font-lao' : ''}`
+          }
         }).then(() => {
           navigate(-1);
         });
@@ -106,48 +111,42 @@ const MakeBookingScreen = () => {
     };
 
     fetchData();
-  }, [bookingId, state, navigate]);
+  }, [bookingId, state, navigate, t, i18n]); // Added t and i18n to dependencies
 
-  // Validate time range whenever startTime or endTime changes
   useEffect(() => {
     const start = new Date(`2000/01/01 ${formData.startTime}`);
     const end = new Date(`2000/01/01 ${formData.endTime}`);
 
     if (start >= end) {
-      setTimeError('End time must be after start time.');
+      setTimeError(t('makeBookingScreen.endTimeAfterStartTimeError'));
     } else {
       setTimeError(null);
     }
-  }, [formData.startTime, formData.endTime]);
+  }, [formData.startTime, formData.endTime, t]); // Added t to dependencies
 
-  // NEW: Validate numberOfAttendees whenever it changes or room data loads
   useEffect(() => {
     if (room && formData.numberOfAttendees > room.capacity) {
-      setAttendeesError(`Number of attendees (${formData.numberOfAttendees}) cannot exceed room capacity (${room.capacity}).`);
+      setAttendeesError(t('makeBookingScreen.attendeesExceedCapacityError', { current: formData.numberOfAttendees, max: room.capacity }));
     } else if (formData.numberOfAttendees < 0) {
-      setAttendeesError('Number of attendees cannot be negative.');
-    }
-    else {
+      setAttendeesError(t('makeBookingScreen.attendeesNegativeError'));
+    } else {
       setAttendeesError(null);
     }
-  }, [formData.numberOfAttendees, room]);
-
+  }, [formData.numberOfAttendees, room, t]); // Added t to dependencies
 
   const handleEquipmentChange = (equip, action = 'toggle') => {
-    setFormData(prev => {
-      const existingIndex = prev.requestedEquipment.findIndex(e => e.name === equip.name);
+    setFormData((prev) => {
+      const existingIndex = prev.requestedEquipment.findIndex((e) => e.name === equip.name);
 
       if (action === 'toggle') {
         if (existingIndex >= 0) {
-          // Remove if already selected
           const newEquipment = [...prev.requestedEquipment];
           newEquipment.splice(existingIndex, 1);
           return { ...prev, requestedEquipment: newEquipment };
         } else {
-          // Add to selection with quantity 1
           return {
             ...prev,
-            requestedEquipment: [...prev.requestedEquipment, { ...equip, requestedQuantity: 1 }]
+            requestedEquipment: [...prev.requestedEquipment, { ...equip, requestedQuantity: 1 }],
           };
         }
       } else if (action === 'quantity') {
@@ -161,30 +160,44 @@ const MakeBookingScreen = () => {
     });
   };
 
-  // Handle time change using standard input type="time"
   const handleTimeChange = (field, e) => {
     const time = e.target.value;
-    setFormData(prev => ({ ...prev, [field]: formatTime(time) }));
+    setFormData((prev) => ({ ...prev, [field]: formatTime(time) }));
   };
 
-  // Handle number of attendees change
   const handleAttendeesChange = (e) => {
     const value = parseInt(e.target.value, 10);
-    setFormData(prev => ({ ...prev, numberOfAttendees: isNaN(value) ? '' : value }));
+    setFormData((prev) => ({ ...prev, numberOfAttendees: isNaN(value) ? '' : value }));
+  };
+
+  const handleSelectTimeFromCalendar = (selectedSlot) => {
+    setFormData((prev) => ({
+      ...prev,
+      startTime: selectedSlot,
+      endTime: formatTime(
+        (parseInt(selectedSlot.split(':')[0], 10) + 1).toString() + ':' + selectedSlot.split(':')[1]
+      ), // Set end time to 1 hour after start
+    }));
+    setShowCalendarModal(false); // Close the modal after selection
   };
 
 
-  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (timeError || attendeesError) { // Check both time and attendees errors
+    if (timeError || attendeesError) {
       Swal.fire({
         icon: 'error',
-        title: 'Validation Error',
-        text: timeError || attendeesError, // Show relevant error
-        confirmButtonText: 'OK',
-        confirmButtonColor: '#000000'
+        title: t('makeBookingScreen.validationError'),
+        text: timeError || attendeesError,
+        confirmButtonText: t('bookingScreen.okButton'),
+        confirmButtonColor: '#000000',
+        customClass: {
+          popup: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
+          title: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
+          htmlContainer: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
+          confirmButton: `${i18n.language === 'lo' ? 'font-lao' : ''}`
+        }
       });
       return;
     }
@@ -194,26 +207,30 @@ const MakeBookingScreen = () => {
     try {
       const bookingDate = new Date(formData.bookingDate);
 
-      // Format the date in local timezone to avoid UTC conversion issues
       const year = bookingDate.getFullYear();
       const month = (bookingDate.getMonth() + 1).toString().padStart(2, '0');
       const day = bookingDate.getDate().toString().padStart(2, '0');
 
       const localBookingDate = `${year}-${month}-${day}`;
 
-      // Additional check: ensure we're not booking for a past date/time
       const now = new Date();
-      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()); // Today's date at 00:00:00
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
       const selectedDate = new Date(bookingDate.getFullYear(), bookingDate.getMonth(), bookingDate.getDate());
 
       if (selectedDate < today) {
         Swal.fire({
           icon: 'error',
-          title: 'Invalid Date',
-          text: 'Cannot book for a past date.',
-          confirmButtonText: 'OK',
-          confirmButtonColor: '#000000'
+          title: t('makeBookingScreen.invalidDate'),
+          text: t('makeBookingScreen.cannotBookPastDate'),
+          confirmButtonText: t('bookingScreen.okButton'),
+          confirmButtonColor: '#000000',
+          customClass: {
+            popup: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
+            title: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
+            htmlContainer: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
+            confirmButton: `${i18n.language === 'lo' ? 'font-lao' : ''}`
+          }
         });
         setIsSubmitting(false);
         return;
@@ -227,10 +244,16 @@ const MakeBookingScreen = () => {
         if (startTimeInMinutes <= currentMinutes) {
           Swal.fire({
             icon: 'error',
-            title: 'Invalid Time',
-            text: 'Cannot book for a time that has already passed today.',
-            confirmButtonText: 'OK',
-            confirmButtonColor: '#000000'
+            title: t('makeBookingScreen.invalidTime'),
+            text: t('makeBookingScreen.cannotBookPastTime'),
+            confirmButtonText: t('bookingScreen.okButton'),
+            confirmButtonColor: '#000000',
+            customClass: {
+              popup: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
+              title: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
+              htmlContainer: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
+              confirmButton: `${i18n.language === 'lo' ? 'font-lao' : ''}`
+            }
           });
           setIsSubmitting(false);
           return;
@@ -242,65 +265,82 @@ const MakeBookingScreen = () => {
         bookingDate: localBookingDate,
         startTime: formatTime(formData.startTime),
         endTime: formatTime(formData.endTime),
-        // Ensure numberOfAttendees is a number, default to 0 if empty/invalid
-        numberOfAttendees: parseInt(formData.numberOfAttendees) || 0
+        numberOfAttendees: parseInt(formData.numberOfAttendees) || 0,
       };
 
       let response;
 
       if (bookingId) {
-        // Update existing booking
         response = await api.patch(`/bookings/${bookingId}`, payload);
         Swal.fire({
           icon: 'success',
-          title: 'Booking Updated!',
-          text: 'Your booking has been successfully updated',
+          title: t('makeBookingScreen.bookingUpdated'),
+          text: t('makeBookingScreen.bookingUpdatedText'),
           timer: 2000,
-          showConfirmButton: false
+          showConfirmButton: false,
+          customClass: {
+            popup: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
+            title: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
+            htmlContainer: `${i18n.language === 'lo' ? 'font-lao' : ''}`
+          }
         });
       } else {
-        // Create new booking
         response = await api.post(`/rooms/${room._id}/booking`, payload);
         Swal.fire({
           icon: 'success',
-          title: 'Booking Created!',
-          text: 'Your room has been successfully booked',
+          title: t('makeBookingScreen.bookingCreated'),
+          text: t('makeBookingScreen.bookingCreatedText'),
           timer: 2000,
-          showConfirmButton: false
+          showConfirmButton: false,
+          customClass: {
+            popup: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
+            title: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
+            htmlContainer: `${i18n.language === 'lo' ? 'font-lao' : ''}`
+          }
         });
       }
 
-      // Go back to previous screen after success
       setTimeout(() => navigate(-1), 2000);
     } catch (err) {
       console.error('Error submitting booking:', err);
-      // Access specific error message from the backend if available
-      const errorMessage = err.response?.data?.message || err.message || 'Could not process your booking request';
+      const errorMessage = err.response?.data?.message || err.message || t('makeBookingScreen.couldNotProcessBooking');
 
       Swal.fire({
         icon: 'error',
-        title: 'Booking Failed',
+        title: t('makeBookingScreen.bookingFailed'),
         text: errorMessage,
-        confirmButtonText: 'OK',
-        confirmButtonColor: '#000000'
+        confirmButtonText: t('bookingScreen.okButton'),
+        confirmButtonColor: '#000000',
+        customClass: {
+          popup: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
+          title: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
+          htmlContainer: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
+          confirmButton: `${i18n.language === 'lo' ? 'font-lao' : ''}`
+        }
       });
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Handle booking rejection
   const handleReject = async () => {
     if (!bookingId) return;
 
     const result = await Swal.fire({
-      title: 'Reject Booking?',
-      text: 'Are you sure you want to reject this booking?',
+      title: t('makeBookingScreen.rejectBookingConfirmationTitle'),
+      text: t('makeBookingScreen.rejectBookingConfirmationText'),
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#d33',
       cancelButtonColor: '#6B7280',
-      confirmButtonText: 'Yes, reject it!'
+      confirmButtonText: t('makeBookingScreen.yesRejectIt'),
+      customClass: {
+        popup: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
+        title: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
+        htmlContainer: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
+        confirmButton: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
+        cancelButton: `${i18n.language === 'lo' ? 'font-lao' : ''}`
+      }
     });
 
     if (result.isConfirmed) {
@@ -308,37 +348,54 @@ const MakeBookingScreen = () => {
         await api.patch(`/bookings/${bookingId}/reject`);
         Swal.fire({
           icon: 'success',
-          title: 'Booking Rejected!',
-          text: 'The booking has been successfully rejected',
+          title: t('makeBookingScreen.bookingRejected'),
+          text: t('makeBookingScreen.bookingRejectedText'),
           timer: 2000,
-          showConfirmButton: false
+          showConfirmButton: false,
+          customClass: {
+            popup: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
+            title: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
+            htmlContainer: `${i18n.language === 'lo' ? 'font-lao' : ''}`
+          }
         });
         navigate(-1);
       } catch (err) {
         console.error('Error rejecting booking:', err);
         Swal.fire({
           icon: 'error',
-          title: 'Rejection Failed',
-          text: err.response?.data?.message || err.message || 'Could not reject the booking',
-          confirmButtonText: 'OK',
-          confirmButtonColor: '#000000'
+          title: t('makeBookingScreen.rejectionFailed'),
+          text: err.response?.data?.message || err.message || t('makeBookingScreen.couldNotRejectBooking'),
+          confirmButtonText: t('bookingScreen.okButton'),
+          confirmButtonColor: '#000000',
+          customClass: {
+            popup: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
+            title: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
+            htmlContainer: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
+            confirmButton: `${i18n.language === 'lo' ? 'font-lao' : ''}`
+          }
         });
       }
     }
   };
 
-  // Handle booking deletion
   const handleDelete = async () => {
     if (!bookingId) return;
 
     const result = await Swal.fire({
-      title: 'Delete Booking?',
-      text: 'Are you sure you want to delete this booking? This action cannot be undone.',
+      title: t('makeBookingScreen.deleteBookingConfirmationTitle'),
+      text: t('makeBookingScreen.deleteBookingConfirmationText'),
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#d33',
       cancelButtonColor: '#6B7280',
-      confirmButtonText: 'Yes, delete it!'
+      confirmButtonText: t('makeBookingScreen.yesDeleteIt'),
+      customClass: {
+        popup: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
+        title: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
+        htmlContainer: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
+        confirmButton: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
+        cancelButton: `${i18n.language === 'lo' ? 'font-lao' : ''}`
+      }
     });
 
     if (result.isConfirmed) {
@@ -346,20 +403,31 @@ const MakeBookingScreen = () => {
         await api.delete(`/bookings/${bookingId}`);
         Swal.fire({
           icon: 'success',
-          title: 'Booking Deleted!',
-          text: 'Your booking has been successfully deleted',
+          title: t('makeBookingScreen.bookingDeleted'),
+          text: t('makeBookingScreen.bookingDeletedText'),
           timer: 2000,
-          showConfirmButton: false
+          showConfirmButton: false,
+          customClass: {
+            popup: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
+            title: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
+            htmlContainer: `${i18n.language === 'lo' ? 'font-lao' : ''}`
+          }
         });
         navigate(-1);
       } catch (err) {
         console.error('Error deleting booking:', err);
         Swal.fire({
           icon: 'error',
-          title: 'Deletion Failed',
-          text: err.response?.data?.message || err.message || 'Could not delete the booking',
-          confirmButtonText: 'OK',
-          confirmButtonColor: '#000000'
+          title: t('makeBookingScreen.deletionFailed'),
+          text: err.response?.data?.message || err.message || t('makeBookingScreen.couldNotDeleteBooking'),
+          confirmButtonText: t('bookingScreen.okButton'),
+          confirmButtonColor: '#000000',
+          customClass: {
+            popup: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
+            title: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
+            htmlContainer: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
+            confirmButton: `${i18n.language === 'lo' ? 'font-lao' : ''}`
+          }
         });
       }
     }
@@ -370,7 +438,7 @@ const MakeBookingScreen = () => {
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading booking details...</p>
+          <p className={`text-gray-600 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>{t('makeBookingScreen.loadingBookingDetails')}</p>
         </div>
       </div>
     );
@@ -381,13 +449,13 @@ const MakeBookingScreen = () => {
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center p-6 max-w-md">
           <div className="text-red-500 text-5xl mb-4">⚠️</div>
-          <h2 className="text-xl font-semibold mb-2">Error Loading Booking</h2>
-          <p className="text-gray-600 mb-6">{error || 'No room information available'}</p>
+          <h2 className={`text-xl font-semibold mb-2 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>{t('makeBookingScreen.errorLoadingBooking')}</h2>
+          <p className={`text-gray-600 mb-6 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>{error || t('makeBookingScreen.noRoomInfoAvailable')}</p>
           <button
             onClick={() => navigate(-1)}
-            className="bg-black text-white px-6 py-2 rounded-lg hover:bg-gray-800 transition-colors"
+            className={`bg-black text-white px-6 py-2 rounded-lg hover:bg-gray-800 transition-colors ${i18n.language === 'lo' ? 'font-lao' : ''}`}
           >
-            Go Back
+            {t('makeBookingScreen.goBack')}
           </button>
         </div>
       </div>
@@ -400,34 +468,34 @@ const MakeBookingScreen = () => {
       <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
         <button
           onClick={() => navigate(-1)}
-          className="flex items-center space-x-2 text-gray-600 hover:text-black"
+          className={`flex items-center space-x-2 text-gray-600 hover:text-black ${i18n.language === 'lo' ? 'font-lao' : ''}`}
         >
           <ArrowLeft className="w-5 h-5" />
-          <span className="font-medium">Back</span>
+          <span className="font-medium">{t('makeBookingScreen.backButton')}</span>
         </button>
 
-        <h1 className="text-lg font-semibold">
-          {bookingId ? (isEditMode ? 'Edit Booking' : 'Booking Details') : 'New Booking'}
+        <h1 className={`text-lg font-semibold ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
+          {bookingId ? (isEditMode ? t('makeBookingScreen.editBooking') : t('makeBookingScreen.bookingDetails')) : t('makeBookingScreen.newBooking')}
         </h1>
 
         {bookingId && !isEditMode ? (
           <button
             onClick={() => setIsEditMode(true)}
-            className="flex items-center space-x-1 text-gray-600 hover:text-black"
+            className={`flex items-center space-x-1 text-gray-600 hover:text-black ${i18n.language === 'lo' ? 'font-lao' : ''}`}
           >
             <Edit className="w-4 h-4" />
-            <span className="text-sm">Edit</span>
+            <span className="text-sm">{t('makeBookingScreen.editButton')}</span>
           </button>
         ) : bookingId ? (
           <button
             onClick={() => setIsEditMode(false)}
-            className="flex items-center space-x-1 text-gray-600 hover:text-black"
+            className={`flex items-center space-x-1 text-gray-600 hover:text-black ${i18n.language === 'lo' ? 'font-lao' : ''}`}
           >
             <X className="w-4 h-4" />
-            <span className="text-sm">Cancel</span>
+            <span className="text-sm">{t('makeBookingScreen.cancelButton')}</span>
           </button>
         ) : (
-          <div className="w-9"></div> // Placeholder for alignment
+          <div className="w-9"></div>
         )}
       </div>
 
@@ -447,7 +515,7 @@ const MakeBookingScreen = () => {
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
-                <div className="text-4xl font-bold text-gray-600">
+                <div className={`text-4xl font-bold text-gray-600 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
                   {room.name ? room.name.substring(0, 2).toUpperCase() : 'RM'}
                 </div>
               </div>
@@ -455,25 +523,25 @@ const MakeBookingScreen = () => {
           </div>
 
           <div className="p-4">
-            <h2 className="text-xl font-semibold mb-2">{room.name}</h2>
+            <h2 className={`text-xl font-semibold mb-2 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>{room.name}</h2>
 
             <div className="flex flex-wrap gap-3 mb-3">
-              <div className="flex items-center text-sm text-gray-600">
+              <div className={`flex items-center text-sm text-gray-600 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
                 <MapPin className="w-4 h-4 mr-1" />
-                <span>{room.location || 'Unknown location'}</span>
+                <span>{room.location || t('makeBookingScreen.unknownLocation')}</span>
               </div>
 
-              <div className="flex items-center text-sm text-gray-600">
+              <div className={`flex items-center text-sm text-gray-600 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
                 <Users className="w-4 h-4 mr-1" />
-                <span>Capacity: {room.capacity || 'N/A'}</span>
+                <span>{t('makeBookingScreen.capacity')} {room.capacity || 'N/A'}</span>
               </div>
             </div>
 
             {room.equipment && room.equipment.length > 0 && (
               <div className="mb-3">
-                <div className="text-sm text-gray-600">
-                  Equipment: {room.equipment.map((item, index) => {
-                    const name = item.equipment?.name || item.name || 'Unknown';
+                <div className={`text-sm text-gray-600 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
+                  {t('makeBookingScreen.equipment')} {room.equipment.map((item, index) => {
+                    const name = item.equipment?.name || item.name || t('makeBookingScreen.unknown');
                     const quantity = item.quantity;
                     return (
                       <span key={index}>
@@ -492,15 +560,15 @@ const MakeBookingScreen = () => {
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Booking Date */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Booking Date
+            <label className={`block text-sm font-medium text-gray-700 mb-1 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
+              {t('makeBookingScreen.bookingDate')}
             </label>
             <div className="relative">
               <DatePicker
                 selected={formData.bookingDate}
                 onChange={(date) => setFormData({ ...formData, bookingDate: date })}
                 minDate={new Date()}
-                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-black focus:border-black"
+                className={`w-full p-2 border border-gray-300 rounded-lg focus:ring-black focus:border-black ${i18n.language === 'lo' ? 'font-lao' : ''}`}
                 disabled={!isEditMode && !!bookingId}
               />
               <Calendar className="absolute right-3 top-3 text-gray-400" />
@@ -510,8 +578,8 @@ const MakeBookingScreen = () => {
           {/* Time Range */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="startTime" className="block text-sm font-medium text-gray-700 mb-1">
-                Start Time
+              <label htmlFor="startTime" className={`block text-sm font-medium text-gray-700 mb-1 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
+                {t('makeBookingScreen.startTime')}
               </label>
               <div className="relative">
                 <input
@@ -519,7 +587,7 @@ const MakeBookingScreen = () => {
                   type="time"
                   value={formData.startTime}
                   onChange={(e) => handleTimeChange('startTime', e)}
-                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-black focus:border-black appearance-none"
+                  className={`w-full p-2 border border-gray-300 rounded-lg focus:ring-black focus:border-black appearance-none ${i18n.language === 'lo' ? 'font-lao' : ''}`}
                   disabled={!isEditMode && !!bookingId}
                   step="900" // 15-minute intervals
                   required
@@ -528,8 +596,8 @@ const MakeBookingScreen = () => {
             </div>
 
             <div>
-              <label htmlFor="endTime" className="block text-sm font-medium text-gray-700 mb-1">
-                End Time
+              <label htmlFor="endTime" className={`block text-sm font-medium text-gray-700 mb-1 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
+                {t('makeBookingScreen.endTime')}
               </label>
               <div className="relative">
                 <input
@@ -537,7 +605,7 @@ const MakeBookingScreen = () => {
                   type="time"
                   value={formData.endTime}
                   onChange={(e) => handleTimeChange('endTime', e)}
-                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-black focus:border-black appearance-none"
+                  className={`w-full p-2 border border-gray-300 rounded-lg focus:ring-black focus:border-black appearance-none ${i18n.language === 'lo' ? 'font-lao' : ''}`}
                   disabled={!isEditMode && !!bookingId}
                   step="900" // 15-minute intervals
                   required
@@ -546,45 +614,59 @@ const MakeBookingScreen = () => {
             </div>
           </div>
           {timeError && (
-            <p className="text-red-500 text-sm mt-1">{timeError}</p>
+            <p className={`text-red-500 text-sm mt-1 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>{timeError}</p>
           )}
 
-          {/* NEW: Number of Attendees Input */}
+          {/* View Calendar Button */}
+          {(isEditMode || !bookingId) && (
+            <div className="text-right">
+              <button
+                type="button"
+                onClick={() => setShowCalendarModal(true)}
+                className={`inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black ${i18n.language === 'lo' ? 'font-lao' : ''}`}
+              >
+                <Eye className="w-4 h-4 mr-2" />
+                {t('makeBookingScreen.viewAvailabilityCalendar')}
+              </button>
+            </div>
+          )}
+
+          {/* Number of Attendees Input */}
           <div>
-            <label htmlFor="numberOfAttendees" className="block text-sm font-medium text-gray-700 mb-1">
-              Number of Attendees
+            <label htmlFor="numberOfAttendees" className={`block text-sm font-medium text-gray-700 mb-1 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
+              {t('makeBookingScreen.numberOfAttendees')}
             </label>
             <input
               id="numberOfAttendees"
               type="number"
               value={formData.numberOfAttendees}
               onChange={handleAttendeesChange}
-              min="0" // Allow 0 for just the user
-              max={room.capacity} // Max based on room capacity
-              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-black focus:border-black"
+              min="0"
+              max={room.capacity}
+              className={`w-full p-2 border border-gray-300 rounded-lg focus:ring-black focus:border-black ${i18n.language === 'lo' ? 'font-lao' : ''}`}
               disabled={!isEditMode && !!bookingId}
               required
             />
             {attendeesError && (
-              <p className="text-red-500 text-sm mt-1">{attendeesError}</p>
+              <p className={`text-red-500 text-sm mt-1 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>{attendeesError}</p>
             )}
-            <p className="text-xs text-gray-500 mt-1">
-              Enter the total number of people attending the meeting, including yourself. (Max: {room.capacity})
+            <p className={`text-xs text-gray-500 mt-1 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
+              {t('makeBookingScreen.attendeesHint', { capacity: room.capacity })}
             </p>
           </div>
 
           {/* Purpose */}
           <div>
-            <label htmlFor="purpose" className="block text-sm font-medium text-gray-700 mb-1">
-              Purpose
+            <label htmlFor="purpose" className={`block text-sm font-medium text-gray-700 mb-1 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
+              {t('makeBookingScreen.purpose')}
             </label>
             <textarea
               id="purpose"
               value={formData.purpose}
               onChange={(e) => setFormData({ ...formData, purpose: e.target.value })}
-              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-black focus:border-black"
+              className={`w-full p-2 border border-gray-300 rounded-lg focus:ring-black focus:border-black ${i18n.language === 'lo' ? 'font-lao' : ''}`}
               rows={3}
-              placeholder="Briefly describe the purpose of your booking..."
+              placeholder={t('makeBookingScreen.purposePlaceholder')}
               disabled={!isEditMode && !!bookingId}
               required
             />
@@ -592,14 +674,14 @@ const MakeBookingScreen = () => {
 
           {/* Equipment Selection */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Request Equipment (Optional)
+            <label className={`block text-sm font-medium text-gray-700 mb-2 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
+              {t('makeBookingScreen.requestEquipmentOptional')}
             </label>
             {room.equipment?.length > 0 ? (
               <div className="space-y-3">
                 {room.equipment.map((item) => {
-                  const name = item.equipment?.name || item.name || 'Unknown';
-                  const selectedEquip = formData.requestedEquipment.find(e => e.name === name);
+                  const name = item.equipment?.name || item.name || t('makeBookingScreen.unknown');
+                  const selectedEquip = formData.requestedEquipment.find((e) => e.name === name);
                   const isSelected = !!selectedEquip;
                   const requestedQuantity = selectedEquip?.requestedQuantity || 1;
 
@@ -609,50 +691,73 @@ const MakeBookingScreen = () => {
                       <div className="flex items-center justify-between mb-2">
                         <button
                           type="button"
-                          onClick={() => isEditMode || !bookingId ? handleEquipmentChange({
-                            name: name,
-                            quantity: item.quantity
-                          }, 'toggle') : null}
+                          onClick={() =>
+                            isEditMode || !bookingId
+                              ? handleEquipmentChange(
+                                {
+                                  name: name,
+                                  quantity: item.quantity,
+                                },
+                                'toggle'
+                              )
+                              : null
+                          }
                           className={`flex items-center space-x-2 transition-colors ${!isEditMode && bookingId ? 'cursor-default' : 'cursor-pointer'
-                            }`}
+                            } ${i18n.language === 'lo' ? 'font-lao' : ''}`}
                         >
-                          <div className={`w-5 h-5 border-2 rounded-sm flex items-center justify-center ${isSelected ? 'bg-black border-black' : 'border-gray-400'
-                            }`}>
+                          <div
+                            className={`w-5 h-5 border-2 rounded-sm flex items-center justify-center ${isSelected ? 'bg-black border-black' : 'border-gray-400'
+                              }`}
+                          >
                             {isSelected && <Check className="w-3 h-3 text-white" />}
                           </div>
                           <span className="font-medium">{name}</span>
                         </button>
-                        <span className="text-sm text-gray-500">{item.quantity} available</span>
+                        <span className={`text-sm text-gray-500 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>{item.quantity} {t('makeBookingScreen.available')}</span>
                       </div>
 
                       {/* Quantity Selector (shown when selected) */}
                       {isSelected && (
                         <div className="mt-2 flex items-center space-x-3">
-                          <label className="text-sm text-gray-600">Quantity needed:</label>
+                          <label className={`text-sm text-gray-600 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>{t('makeBookingScreen.quantityNeeded')}</label>
                           <div className="flex items-center space-x-2">
                             <button
                               type="button"
-                              onClick={() => isEditMode || !bookingId ? handleEquipmentChange({
-                                name: name,
-                                quantity: item.quantity,
-                                requestedQuantity: Math.max(1, requestedQuantity - 1)
-                              }, 'quantity') : null}
-                              className="w-8 h-8 border border-gray-300 rounded flex items-center justify-center hover:bg-gray-100 disabled:opacity-50"
+                              onClick={() =>
+                                isEditMode || !bookingId
+                                  ? handleEquipmentChange(
+                                    {
+                                      name: name,
+                                      quantity: item.quantity,
+                                      requestedQuantity: Math.max(1, requestedQuantity - 1),
+                                    },
+                                    'quantity'
+                                  )
+                                  : null
+                              }
+                              className={`w-8 h-8 border border-gray-300 rounded flex items-center justify-center hover:bg-gray-100 disabled:opacity-50 ${i18n.language === 'lo' ? 'font-lao' : ''}`}
                               disabled={requestedQuantity <= 1 || (!isEditMode && bookingId)}
                             >
                               -
                             </button>
 
-                            <span className="w-8 text-center font-medium">{requestedQuantity}</span>
+                            <span className={`w-8 text-center font-medium ${i18n.language === 'lo' ? 'font-lao' : ''}`}>{requestedQuantity}</span>
 
                             <button
                               type="button"
-                              onClick={() => isEditMode || !bookingId ? handleEquipmentChange({
-                                name: name,
-                                quantity: item.quantity,
-                                requestedQuantity: Math.min(item.quantity, requestedQuantity + 1)
-                              }, 'quantity') : null}
-                              className="w-8 h-8 border border-gray-300 rounded flex items-center justify-center hover:bg-gray-100 disabled:opacity-50"
+                              onClick={() =>
+                                isEditMode || !bookingId
+                                  ? handleEquipmentChange(
+                                    {
+                                      name: name,
+                                      quantity: item.quantity,
+                                      requestedQuantity: Math.min(item.quantity, requestedQuantity + 1),
+                                    },
+                                    'quantity'
+                                  )
+                                  : null
+                              }
+                              className={`w-8 h-8 border border-gray-300 rounded flex items-center justify-center hover:bg-gray-100 disabled:opacity-50 ${i18n.language === 'lo' ? 'font-lao' : ''}`}
                               disabled={requestedQuantity >= item.quantity || (!isEditMode && bookingId)}
                             >
                               +
@@ -665,26 +770,26 @@ const MakeBookingScreen = () => {
                 })}
               </div>
             ) : (
-              <p className="text-sm text-gray-500">No equipment available for this room</p>
+              <p className={`text-sm text-gray-500 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>{t('makeBookingScreen.noEquipmentAvailable')}</p>
             )}
           </div>
 
           {/* Equipment Notes Section */}
           <div>
-            <label htmlFor="equipmentNotes" className="block text-sm font-medium text-gray-700 mb-1">
-              Additional Equipment Notes (Optional)
+            <label htmlFor="equipmentNotes" className={`block text-sm font-medium text-gray-700 mb-1 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
+              {t('makeBookingScreen.additionalEquipmentNotesOptional')}
             </label>
             <textarea
               id="equipmentNotes"
               value={formData.equipmentNotes}
               onChange={(e) => setFormData({ ...formData, equipmentNotes: e.target.value })}
-              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-black focus:border-black"
+              className={`w-full p-2 border border-gray-300 rounded-lg focus:ring-black focus:border-black ${i18n.language === 'lo' ? 'font-lao' : ''}`}
               rows={2}
-              placeholder="Request additional equipment or special arrangements..."
+              placeholder={t('makeBookingScreen.additionalEquipmentNotesPlaceholder')}
               disabled={!isEditMode && !!bookingId}
             />
-            <p className="text-xs text-gray-500 mt-1">
-              Use this field to request equipment not listed above or specify special requirements.
+            <p className={`text-xs text-gray-500 mt-1 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
+              {t('makeBookingScreen.additionalEquipmentNotesHint')}
             </p>
           </div>
 
@@ -693,16 +798,16 @@ const MakeBookingScreen = () => {
             {(isEditMode || !bookingId) && (
               <button
                 type="submit"
-                disabled={isSubmitting || timeError || attendeesError} // Disable if any error exists
-                className="flex-1 bg-black text-white py-3 px-6 rounded-lg hover:bg-gray-800 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                disabled={isSubmitting || timeError || attendeesError}
+                className={`flex-1 bg-black text-white py-3 px-6 rounded-lg hover:bg-gray-800 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed ${i18n.language === 'lo' ? 'font-lao' : ''}`}
               >
                 {isSubmitting ? (
                   <span className="flex items-center justify-center">
                     <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></span>
-                    {bookingId ? 'Updating...' : 'Booking...'}
+                    {bookingId ? t('makeBookingScreen.updating') : t('makeBookingScreen.booking')}
                   </span>
                 ) : (
-                  <span>{bookingId ? 'Update Booking' : 'Confirm Booking'}</span>
+                  <span>{bookingId ? t('makeBookingScreen.updateBooking') : t('makeBookingScreen.confirmBooking')}</span>
                 )}
               </button>
             )}
@@ -712,20 +817,20 @@ const MakeBookingScreen = () => {
                 <button
                   type="button"
                   onClick={handleDelete}
-                  className="flex-1 flex items-center justify-center space-x-2 bg-red-100 text-red-600 py-3 px-6 rounded-lg hover:bg-red-200 transition-colors"
+                  className={`flex-1 flex items-center justify-center space-x-2 bg-red-100 text-red-600 py-3 px-6 rounded-lg hover:bg-red-200 transition-colors ${i18n.language === 'lo' ? 'font-lao' : ''}`}
                 >
                   <Trash className="w-4 h-4" />
-                  <span>Delete Booking</span>
+                  <span>{t('makeBookingScreen.deleteBooking')}</span>
                 </button>
 
                 {bookingDetails?.status === 'pending' && (
                   <button
                     type="button"
                     onClick={handleReject}
-                    className="flex-1 flex items-center justify-center space-x-2 bg-gray-100 text-gray-600 py-3 px-6 rounded-lg hover:bg-gray-200 transition-colors"
+                    className={`flex-1 flex items-center justify-center space-x-2 bg-gray-100 text-gray-600 py-3 px-6 rounded-lg hover:bg-gray-200 transition-colors ${i18n.language === 'lo' ? 'font-lao' : ''}`}
                   >
                     <X className="w-4 h-4" />
-                    <span>Reject Booking</span>
+                    <span>{t('makeBookingScreen.rejectBooking')}</span>
                   </button>
                 )}
               </>
@@ -733,6 +838,16 @@ const MakeBookingScreen = () => {
           </div>
         </form>
       </div>
+
+      {/* Calendar Modal */}
+      {showCalendarModal && room && (
+        <RoomCalendarModal
+          room={room}
+          initialSelectedDate={formData.bookingDate} // Pass the current booking date
+          onClose={() => setShowCalendarModal(false)}
+          onTimeSelect={handleSelectTimeFromCalendar}
+        />
+      )}
     </div>
   );
 };

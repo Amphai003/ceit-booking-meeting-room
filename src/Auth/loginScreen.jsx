@@ -6,7 +6,6 @@ import api from '../api';
 import { useAuth } from '../Auth/authContext';
 import { useTranslation } from 'react-i18next';
 
-// ADDED: It's more reliable to import assets
 import ceitLogo from '/src/assets/ceit-logo.png';
 import googleLogo from '/assets/google.png';
 import facebookLogo from '/assets/facebook.png';
@@ -22,12 +21,11 @@ const Login = () => {
 
   const switchLanguage = (lang) => {
     i18n.changeLanguage(lang);
-    // CHANGED: Persist language choice in localStorage
     localStorage.setItem('i18nextLng', lang);
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault(); // Good practice to have this in the handler
+    e.preventDefault();
     setIsLoading(true);
 
     try {
@@ -55,13 +53,11 @@ const Login = () => {
       const { token, user } = result;
       const role = user.role;
 
-      // ADDED: Set a 24-hour expiration for the token
       const expirationTime = new Date().getTime() + 24 * 60 * 60 * 1000;
 
       localStorage.setItem('token', token);
       localStorage.setItem('role', role);
       localStorage.setItem('user', JSON.stringify(user));
-      // ADDED: Store the expiration timestamp
       localStorage.setItem('tokenExpiry', expirationTime.toString());
       localStorage.setItem('loggedIn', 'true');
 
@@ -98,14 +94,15 @@ const Login = () => {
       setIsLoading(false);
     }
   };
-  
-  // These handlers remain the same
+  const handleForgotPassword = () => {
+    navigate('/forgot-password');
+  };
   const handleGoogleSignIn = () => { /* ... */ };
   const handleFacebookSignIn = () => { /* ... */ };
 
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4 sm:p-6 lg:p-8">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center p-4 sm:p-6 lg:p-8">
       <div className="w-full max-w-sm sm:max-w-md lg:max-w-lg">
         <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl sm:shadow-2xl p-6 sm:p-8 lg:p-10 font-lao">
           <div className="flex justify-end mb-2">
@@ -121,8 +118,7 @@ const Login = () => {
               {t('meeting_booking')}
             </h1>
           </div>
-          
-          {/* CHANGED: Wrapped in a <form> element with onSubmit */}
+
           <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
             <div className="text-center">
               <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-gray-900 mb-2">
@@ -141,7 +137,7 @@ const Login = () => {
                   placeholder={t('email_placeholder')}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-3 sm:px-4 py-2.5 sm:py-3 lg:py-4 bg-gray-50 border-0 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900 focus:bg-white transition-all duration-300 text-sm sm:text-base placeholder-gray-500"
+                  className="w-full px-3 sm:px-4 py-2.5 sm:py-3 lg:py-4 bg-blue-50 border-0 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white transition-all duration-300 text-sm sm:text-base placeholder-gray-500"
                 />
               </div>
 
@@ -152,7 +148,7 @@ const Login = () => {
                   placeholder={t('password_placeholder')}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-3 sm:px-4 py-2.5 sm:py-3 lg:py-4 bg-gray-50 border-0 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900 focus:bg-white transition-all duration-300 text-sm sm:text-base placeholder-gray-500 pr-10 sm:pr-12"
+                  className="w-full px-3 sm:px-4 py-2.5 sm:py-3 lg:py-4 bg-blue-50 border-0 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white transition-all duration-300 text-sm sm:text-base placeholder-gray-500 pr-10 sm:pr-12"
                 />
                 <button
                   type="button"
@@ -165,15 +161,19 @@ const Login = () => {
               </div>
 
               <div className="text-right">
-                <button type="button" className="text-xs sm:text-sm text-gray-600 hover:text-gray-900 transition-colors duration-200 font-medium">
+                <button
+                  type="button"
+                  onClick={handleForgotPassword}
+                  className="text-xs sm:text-sm text-blue-600 hover:text-blue-700 transition-colors duration-200 font-medium"
+                >
                   {t('forgot_password')}
                 </button>
               </div>
 
               <button
-                type="submit" // CHANGED: Changed to type="submit"
+                type="submit"
                 disabled={isLoading}
-                className="w-full bg-gradient-to-r from-gray-800 to-gray-900 hover:from-gray-900 hover:to-black text-white py-2.5 sm:py-3 lg:py-4 rounded-lg sm:rounded-xl font-medium text-sm sm:text-base transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed"
+                className="w-full bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-700 hover:to-blue-900 text-white py-2.5 sm:py-3 lg:py-4 rounded-lg sm:rounded-xl font-medium text-sm sm:text-base transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed"
               >
                 {isLoading ? (
                   <span className="flex items-center justify-center">
@@ -203,10 +203,10 @@ const Login = () => {
           <div className="grid grid-cols-2 gap-3 sm:gap-4">
             <button
               onClick={handleGoogleSignIn}
-              className="flex items-center justify-center py-2.5 sm:py-3 lg:py-4 px-3 sm:px-4 border border-gray-200 rounded-lg sm:rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all duration-200"
+              className="flex items-center justify-center py-2.5 sm:py-3 lg:py-4 px-3 sm:px-4 border border-gray-200 rounded-lg sm:rounded-xl hover:bg-blue-50 hover:border-blue-300 transition-all duration-200"
             >
               <img
-                src={googleLogo} // CHANGED: Using imported asset
+                src={googleLogo}
                 alt="Google"
                 className="h-5 w-5 sm:h-6 sm:w-6"
               />
@@ -217,10 +217,10 @@ const Login = () => {
 
             <button
               onClick={handleFacebookSignIn}
-              className="flex items-center justify-center py-2.5 sm:py-3 lg:py-4 px-3 sm:px-4 border border-gray-200 rounded-lg sm:rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all duration-200"
+              className="flex items-center justify-center py-2.5 sm:py-3 lg:py-4 px-3 sm:px-4 border border-gray-200 rounded-lg sm:rounded-xl hover:bg-blue-50 hover:border-blue-300 transition-all duration-200"
             >
               <img
-                src={facebookLogo} // CHANGED: Using imported asset
+                src={facebookLogo}
                 alt="Facebook"
                 className="h-5 w-5 sm:h-6 sm:w-6"
               />

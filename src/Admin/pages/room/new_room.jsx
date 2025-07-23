@@ -1,8 +1,7 @@
-
-import React, { useState,useEffect  } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
-import api from '../../../api';
+import api from '../../../api'; // Assuming this is your axios instance
 import RoomForm from './room_form';
 import Swal from 'sweetalert2';
 
@@ -19,7 +18,8 @@ const NewRoomPage = () => {
         const formatted = res.data.map(eq => ({
           id: eq._id,
           name: eq.name,
-       
+          availableQuantity: eq.quantity, // Pass available quantity
+          description: eq.description,     // Pass description
         }));
         setEquipmentOptions(formatted);
       } catch (err) {
@@ -30,54 +30,53 @@ const NewRoomPage = () => {
     fetchEquipment();
   }, []);
 
-const handlePhotoUpload = async (file) => {
-  if (!file) return '';
-  
-  setUploading(true);
-  try {
-    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-    const uploadFormData = new FormData();
-    uploadFormData.append('image', file);
-    
-    const response = await api.post('/upload', uploadFormData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-        'Authorization': `Bearer ${token}`
-      },
-    });
-    
-    // Extract URL from response (adjust according to your API response structure)
-    const photoUrl = response.data.url || 
-                    response.data.Location || 
-                    response.data.imageUrl || 
-                    response.data;
-    
-    if (!photoUrl) {
-      throw new Error('No image URL returned from server');
-    }
+  const handlePhotoUpload = async (file) => {
+    if (!file) return '';
 
-    await Swal.fire({
-      icon: 'success',
-      title: 'Photo Uploaded!',
-      text: 'Photo has been uploaded successfully.',
-      confirmButtonColor: '#3B82F6',
-      timer: 2000
-    });
-    
-    return photoUrl;
-  } catch (err) {
-    console.error('Error uploading photo:', err);
-    await Swal.fire({
-      icon: 'error',
-      title: 'Upload Failed',
-      text: err.response?.data?.message || 'Failed to upload photo. Please try again.',
-      confirmButtonColor: '#3B82F6'
-    });
-    return '';
-  } finally {
-    setUploading(false);
-  }
-};
+    setUploading(true);
+    try {
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      const uploadFormData = new FormData();
+      uploadFormData.append('image', file);
+
+      const response = await api.post('/upload', uploadFormData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${token}`
+        },
+      });
+
+      const photoUrl = response.data.url ||
+                       response.data.Location ||
+                       response.data.imageUrl ||
+                       response.data;
+
+      if (!photoUrl) {
+        throw new Error('No image URL returned from server');
+      }
+
+      await Swal.fire({
+        icon: 'success',
+        title: 'Photo Uploaded!',
+        text: 'Photo has been uploaded successfully.',
+        confirmButtonColor: '#3B82F6',
+        timer: 2000
+      });
+
+      return photoUrl;
+    } catch (err) {
+      console.error('Error uploading photo:', err);
+      await Swal.fire({
+        icon: 'error',
+        title: 'Upload Failed',
+        text: err.response?.data?.message || 'Failed to upload photo. Please try again.',
+        confirmButtonColor: '#3B82F6'
+      });
+      return '';
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const handleSubmit = async (formData) => {
     try {
@@ -85,7 +84,7 @@ const handlePhotoUpload = async (file) => {
         ...formData,
         capacity: parseInt(formData.capacity),
       });
-      
+
       await Swal.fire({
         icon: 'success',
         title: 'Room Created!',
@@ -93,7 +92,7 @@ const handlePhotoUpload = async (file) => {
         confirmButtonColor: '#3B82F6',
         timer: 2000
       });
-      
+
       navigate('/rooms');
     } catch (err) {
       console.error('Error creating room:', err);
@@ -101,9 +100,8 @@ const handlePhotoUpload = async (file) => {
     }
   };
 
- return (
+  return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header and back button */}
       <div className="sticky top-0 z-40 bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto p-4">
           <div className="flex items-center gap-4 mb-4">
@@ -118,7 +116,6 @@ const handlePhotoUpload = async (file) => {
         </div>
       </div>
 
-      {/* Form Section */}
       <div className="max-w-7xl mx-auto p-4">
         <RoomForm
           onSubmit={handleSubmit}
