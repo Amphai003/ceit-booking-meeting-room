@@ -3,6 +3,7 @@ import axios from 'axios';
 // 1. Environment Configuration
 const baseURL = import.meta.env.VITE_APP_API_BASE_URL || 'http://localhost:8090/api';
 
+
 // 2. Token Management Utilities
 const getToken = () => {
   return localStorage.getItem('token') || sessionStorage.getItem('token');
@@ -64,7 +65,7 @@ api.interceptors.response.use(
     // Log request duration
     if (response.config.metadata?.startTime) {
       const duration = Date.now() - response.config.metadata.startTime;
-      console.log(`[API] ${response.config.method?.toUpperCase()} ${response.config.url} (${duration}ms)`);
+      console.log(`[API] ${response.config.method?.toUpperCase()} ${response.config.url} (${duration}ms) - api.js:68`);
     }
     
     return response.data;
@@ -77,12 +78,12 @@ api.interceptors.response.use(
       const url = error.config?.url || 'unknown endpoint';
       const method = error.config?.method?.toUpperCase() || 'REQUEST';
       
-      console.error(`[API] ${status} Error - ${method} ${url}:`, data?.message || data);
+      console.error(`[API] ${status} Error  ${method} ${url}: - api.js:81`, data?.message || data);
 
       switch (status) {
         case 401:
           // Clear tokens and trigger auth flow
-          console.warn('[API] Authentication failed - clearing tokens');
+          console.warn('[API] Authentication failed  clearing tokens - api.js:86');
           clearTokens();
           
           // Dispatch custom event for app-wide handling
@@ -106,12 +107,12 @@ api.interceptors.response.use(
           
         case 404:
           // Handle not found errors
-          console.warn(`[API] 404: ${method} ${url} not found`);
+          console.warn(`[API] 404: ${method} ${url} not found - api.js:110`);
           break;
           
         case 422:
           // Handle validation errors
-          console.warn(`[API] Validation error:`, data);
+          console.warn(`[API] Validation error: - api.js:115`, data);
           break;
           
         case 500:
@@ -134,7 +135,7 @@ api.interceptors.response.use(
       
     } else if (error.request) {
       // Request was made but no response received
-      console.error('[API] No response received:', error.request);
+      console.error('[API] No response received: - api.js:138', error.request);
       return Promise.reject({
         status: null,
         message: 'Network error - no response from server',
@@ -143,7 +144,7 @@ api.interceptors.response.use(
       
     } else {
       // Request setup error
-      console.error('[API] Request setup error:', error.message);
+      console.error('[API] Request setup error: - api.js:147', error.message);
       return Promise.reject({
         status: null,
         message: error.message || 'Request configuration error'
@@ -173,7 +174,7 @@ export const authAPI = {
     try {
       await api.post('/auth/logout');
     } catch (error) {
-      console.warn('[API] Logout request failed:', error);
+      console.warn('[API] Logout request failed: - api.js:177', error);
     } finally {
       clearTokens();
     }

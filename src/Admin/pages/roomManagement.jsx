@@ -1,12 +1,14 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, ArrowLeft, Loader } from 'lucide-react';
+import { Plus, ArrowLeft, Loader, AlertCircle, Search, Filter } from 'lucide-react'; // Added Search and Filter
 import api from '../../api';
 import RoomList from './room/room_list';
 import Swal from 'sweetalert2';
+import { useTranslation } from 'react-i18next'; // Import useTranslation
 
 const RoomManagement = () => {
+  const { t, i18n } = useTranslation(); // Initialize translation hook
+
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -16,28 +18,29 @@ const RoomManagement = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [totalRooms, setTotalRooms] = useState(0);
   const [limit] = useState(10);
-  
+  const [roomTypeOptions, setRoomTypeOptions] = useState([]);
+
   const navigate = useNavigate();
 
   const fetchRooms = async (page = 1, search = '', status = 'all') => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const params = new URLSearchParams({
         page: page.toString(),
         limit: limit.toString()
       });
-      
+
       if (search) params.append('search', search);
       if (status !== 'all') params.append('status', status);
-      
+
       const response = await api.get(`/rooms?${params.toString()}`);
-      
+
       if (response && response.data) {
         const roomsData = response.data.data || response.data.rooms || response.data || [];
         const pagination = response.data.pagination || {};
-        
+
         setRooms(roomsData);
         setCurrentPage(pagination.currentPage || page);
         setTotalPages(pagination.totalPages || Math.ceil((pagination.total || roomsData.length) / limit));
@@ -45,12 +48,18 @@ const RoomManagement = () => {
       }
     } catch (err) {
       console.error('Error fetching rooms:', err);
-      setError('Failed to load rooms. Please try again.');
+      setError(t('roomManagementScreen.failedToLoadRooms'));
       await Swal.fire({
         icon: 'error',
-        title: 'Error Loading Rooms',
-        text: 'Failed to load rooms. Please check your connection and try again.',
-        confirmButtonColor: '#3B82F6'
+        title: t('roomManagementScreen.errorLoadingRooms'),
+        text: t('roomManagementScreen.failedToLoadRooms'),
+        confirmButtonColor: '#3B82F6',
+        customClass: {
+          popup: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
+          title: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
+          htmlContainer: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
+          confirmButton: `${i18n.language === 'lo' ? 'font-lao' : ''}`
+        }
       });
     } finally {
       setLoading(false);
@@ -82,6 +91,19 @@ const RoomManagement = () => {
     }
   };
 
+  useEffect(() => {
+  const fetchRoomTypes = async () => {
+    try {
+      const res = await api.get('/room-types');
+      setRoomTypeOptions(res.data);
+    } catch (err) {
+      console.error('Failed to load room types:', err);
+    }
+  };
+
+  fetchRoomTypes();
+}, []);
+
   const handlePageChange = (page) => {
     if (page >= 1 && page <= totalPages && page !== currentPage) {
       setCurrentPage(page);
@@ -94,13 +116,20 @@ const RoomManagement = () => {
 
   const handleDelete = async (room) => {
     const result = await Swal.fire({
-      title: 'Delete Room?',
-      text: `Are you sure you want to delete "${room.name}"?`,
+      title: t('roomManagementScreen.deleteRoomConfirmationTitle'),
+      text: t('roomManagementScreen.deleteRoomConfirmationText', { roomName: room.name }),
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#EF4444',
       cancelButtonColor: '#6B7280',
-      confirmButtonText: 'Yes, delete it!'
+      confirmButtonText: t('roomManagementScreen.yesDeleteIt'),
+      customClass: {
+        popup: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
+        title: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
+        htmlContainer: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
+        confirmButton: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
+        cancelButton: `${i18n.language === 'lo' ? 'font-lao' : ''}`
+      }
     });
 
     if (result.isConfirmed) {
@@ -108,19 +137,31 @@ const RoomManagement = () => {
         await api.delete(`/rooms/${room._id || room.id}`);
         await Swal.fire({
           icon: 'success',
-          title: 'Deleted!',
-          text: `${room.name} has been deleted.`,
+          title: t('roomManagementScreen.deleted'),
+          text: t('roomManagementScreen.roomDeleted', { roomName: room.name }),
           confirmButtonColor: '#3B82F6',
-          timer: 2000
+          timer: 2000,
+          customClass: {
+            popup: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
+            title: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
+            htmlContainer: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
+            confirmButton: `${i18n.language === 'lo' ? 'font-lao' : ''}`
+          }
         });
         await fetchRooms(currentPage, searchTerm, statusFilter);
       } catch (err) {
         console.error('Error deleting room:', err);
         await Swal.fire({
           icon: 'error',
-          title: 'Error Deleting Room',
-          text: 'Failed to delete room. Please try again.',
-          confirmButtonColor: '#3B82F6'
+          title: t('roomManagementScreen.errorDeletingRoom'),
+          text: t('roomManagementScreen.failedToDeleteRoom'),
+          confirmButtonColor: '#3B82F6',
+          customClass: {
+            popup: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
+            title: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
+            htmlContainer: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
+            confirmButton: `${i18n.language === 'lo' ? 'font-lao' : ''}`
+          }
         });
       }
     }
@@ -131,7 +172,7 @@ const RoomManagement = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="flex items-center gap-2 text-gray-600">
           <Loader className="animate-spin" size={24} />
-          <span>Loading rooms...</span>
+          <span className={`${i18n.language === 'lo' ? 'font-lao' : ''}`}>{t('roomManagementScreen.loadingRooms')}</span>
         </div>
       </div>
     );
@@ -148,16 +189,16 @@ const RoomManagement = () => {
             >
               <ArrowLeft size={24} />
             </button>
-            <h1 className="text-3xl font-bold text-gray-900">Room Management</h1>
+            <h1 className={`text-3xl font-bold text-gray-900 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>{t('roomManagementScreen.roomManagement')}</h1>
           </div>
           <div className="flex justify-between items-center">
-            <p className="text-gray-600">Manage your office spaces efficiently</p>
+            <p className={`text-gray-600 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>{t('roomManagementScreen.manageOfficeSpaces')}</p>
             <button
               onClick={() => navigate('/rooms/new')}
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
+              className={`flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors ${i18n.language === 'lo' ? 'font-lao' : ''}`}
             >
               <Plus size={20} />
-              Add Room
+              {t('roomManagementScreen.addRoom')}
             </button>
           </div>
         </div>

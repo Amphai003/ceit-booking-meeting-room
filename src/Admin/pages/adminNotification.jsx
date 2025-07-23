@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Bell, X, Check, Trash2, Clock, ArrowLeft } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from'react-router-dom';
 import api from '../../api';
 import Swal from 'sweetalert2';
+import { useTranslation } from 'react-i18next';
 
 const NotificationsScreen = () => {
+  const { t, i18n } = useTranslation();
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -24,10 +26,15 @@ const NotificationsScreen = () => {
       console.error('Error fetching notifications:', error);
       Swal.fire({
         icon: 'error',
-        title: 'Error',
-        text: 'Failed to load notifications',
+        title: t('adminBookingsApp.errorTitle'),
+        text: t('notificationsScreen.failedToLoadNotifications'),
         timer: 2000,
-        showConfirmButton: false
+        showConfirmButton: false,
+        customClass: {
+          popup: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
+          title: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
+          htmlContainer: `${i18n.language === 'lo' ? 'font-lao' : ''}`
+        }
       });
     } finally {
       setLoading(false);
@@ -41,31 +48,48 @@ const NotificationsScreen = () => {
       setUnreadCount(prev => prev - 1);
       Swal.fire({
         icon: 'success',
-        title: 'Marked as read',
+        title: t('notificationsScreen.markAsReadTitle'),
         timer: 1500,
-        showConfirmButton: false
+        showConfirmButton: false,
+        customClass: {
+          popup: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
+          title: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
+          htmlContainer: `${i18n.language === 'lo' ? 'font-lao' : ''}`
+        }
       });
     } catch (error) {
       console.error('Error marking notification as read:', error);
       Swal.fire({
         icon: 'error',
-        title: 'Error',
-        text: 'Failed to mark as read',
+        title: t('adminBookingsApp.errorTitle'),
+        text: t('notificationsScreen.failedToMarkAllAsRead'),
         timer: 2000,
-        showConfirmButton: false
+        showConfirmButton: false,
+        customClass: {
+          popup: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
+          title: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
+          htmlContainer: `${i18n.language === 'lo' ? 'font-lao' : ''}`
+        }
       });
     }
   };
 
   const markAllAsRead = async () => {
     const { isConfirmed } = await Swal.fire({
-      title: 'Mark all as read?',
-      text: 'This will mark all notifications as read',
+      title: t('notificationsScreen.markAllAsReadConfirmationTitle'),
+      text: t('notificationsScreen.markAllAsReadConfirmationText'),
       icon: 'question',
       showCancelButton: true,
       confirmButtonColor: '#3085d6',
       cancelButtonColor: '#d33',
-      confirmButtonText: 'Yes, mark all'
+      confirmButtonText: t('notificationsScreen.yesMarkAll'),
+      customClass: {
+        popup: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
+        title: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
+        htmlContainer: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
+        confirmButton: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
+        cancelButton: `${i18n.language === 'lo' ? 'font-lao' : ''}`
+      }
     });
 
     if (!isConfirmed) return;
@@ -76,31 +100,48 @@ const NotificationsScreen = () => {
       setUnreadCount(0);
       Swal.fire({
         icon: 'success',
-        title: 'All marked as read',
+        title: t('notificationsScreen.allMarkedAsRead'),
         timer: 1500,
-        showConfirmButton: false
+        showConfirmButton: false,
+        customClass: {
+          popup: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
+          title: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
+          htmlContainer: `${i18n.language === 'lo' ? 'font-lao' : ''}`
+        }
       });
     } catch (err) {
       console.error("Failed to mark all notifications as read:", err);
       Swal.fire({
         icon: 'error',
-        title: 'Error',
-        text: 'Failed to mark all as read',
+        title: t('adminBookingsApp.errorTitle'),
+        text: t('notificationsScreen.failedToMarkAllAsRead'),
         timer: 2000,
-        showConfirmButton: false
+        showConfirmButton: false,
+        customClass: {
+          popup: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
+          title: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
+          htmlContainer: `${i18n.language === 'lo' ? 'font-lao' : ''}`
+        }
       });
     }
   };
 
   const clearAllNotifications = async () => {
     const { isConfirmed } = await Swal.fire({
-      title: 'Clear all notifications?',
-      text: 'This action cannot be undone',
+      title: t('notificationsScreen.clearAllNotificationsConfirmationTitle'),
+      text: t('notificationsScreen.clearAllNotificationsConfirmationText'),
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#3085d6',
       cancelButtonColor: '#d33',
-      confirmButtonText: 'Yes, clear all'
+      confirmButtonText: t('notificationsScreen.yesClearAll'),
+      customClass: {
+        popup: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
+        title: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
+        htmlContainer: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
+        confirmButton: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
+        cancelButton: `${i18n.language === 'lo' ? 'font-lao' : ''}`
+      }
     });
 
     if (!isConfirmed) return;
@@ -111,25 +152,35 @@ const NotificationsScreen = () => {
       setUnreadCount(0);
       Swal.fire({
         icon: 'success',
-        title: 'All cleared',
+        title: t('notificationsScreen.allCleared'),
         timer: 1500,
-        showConfirmButton: false
+        showConfirmButton: false,
+        customClass: {
+          popup: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
+          title: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
+          htmlContainer: `${i18n.language === 'lo' ? 'font-lao' : ''}`
+        }
       });
     } catch (error) {
       console.error('Error clearing notifications:', error);
       Swal.fire({
         icon: 'error',
-        title: 'Error',
-        text: 'Failed to clear notifications',
+        title: t('adminBookingsApp.errorTitle'),
+        text: t('notificationsScreen.failedToClearNotifications'),
         timer: 2000,
-        showConfirmButton: false
+        showConfirmButton: false,
+        customClass: {
+          popup: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
+          title: `${i18n.language === 'lo' ? 'font-lao' : ''}`,
+          htmlContainer: `${i18n.language === 'lo' ? 'font-lao' : ''}`
+        }
       });
     }
   };
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
-    return date.toLocaleString();
+    return date.toLocaleString(i18n.language === 'lo' ? 'lo-LA' : 'en-US');
   };
 
   return (
@@ -143,23 +194,23 @@ const NotificationsScreen = () => {
           >
             <ArrowLeft className="h-5 w-5" />
           </button>
-          
-          <h1 className="text-lg font-medium text-gray-900">Notifications</h1>
-          
+
+          <h1 className={`text-lg font-medium text-gray-900 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>{t('notificationsScreen.headerTitle')}</h1>
+
           <div className="flex space-x-2">
             {notifications.length > 0 && (
               <>
                 <button
                   onClick={markAllAsRead}
                   className="p-1 text-gray-500 hover:text-blue-600 hover:bg-gray-100 rounded-md"
-                  title="Mark all as read"
+                  title={t('notificationsScreen.markAllAsRead')}
                 >
                   <Check className="h-5 w-5" />
                 </button>
                 <button
                   onClick={clearAllNotifications}
                   className="p-1 text-gray-500 hover:text-red-600 hover:bg-gray-100 rounded-md"
-                  title="Clear all"
+                  title={t('notificationsScreen.clearAll')}
                 >
                   <Trash2 className="h-5 w-5" />
                 </button>
@@ -174,12 +225,13 @@ const NotificationsScreen = () => {
         {loading ? (
           <div className="flex justify-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+            <span className={`ml-2 text-gray-600 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>{t('notificationsScreen.loadingNotifications')}</span>
           </div>
         ) : notifications.length === 0 ? (
           <div className="text-center py-12">
             <Bell className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">No notifications</h3>
-            <p className="mt-1 text-sm text-gray-500">You're all caught up!</p>
+            <h3 className={`mt-2 text-sm font-medium text-gray-900 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>{t('notificationsScreen.noNotificationsTitle')}</h3>
+            <p className={`mt-1 text-sm text-gray-500 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>{t('notificationsScreen.allCaughtUpEmptyState')}</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -194,9 +246,9 @@ const NotificationsScreen = () => {
                       {!notification.isRead ? <Bell className="w-5 h-5" /> : <Check className="w-5 h-5" />}
                     </div>
                     <div className="ml-3">
-                      <p className="text-sm font-medium text-gray-900">{notification.title}</p>
-                      <p className="text-sm text-gray-500">{notification.message}</p>
-                      <p className="text-xs text-gray-400 mt-1 flex items-center">
+                      <p className={`text-sm font-medium text-gray-900 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>{notification.title}</p>
+                      <p className={`text-sm text-gray-500 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>{notification.message}</p>
+                      <p className={`text-xs text-gray-400 mt-1 flex items-center ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
                         <Clock className="w-3 h-3 mr-1" />
                         {formatDate(notification.createdAt)}
                       </p>
@@ -205,7 +257,7 @@ const NotificationsScreen = () => {
                   <button
                     onClick={() => markAsRead(notification._id)}
                     className="text-gray-400 hover:text-gray-600"
-                    aria-label="Mark as read"
+                    aria-label={t('notificationsScreen.markAsReadTitle')}
                   >
                     <X className="w-5 h-5" />
                   </button>
