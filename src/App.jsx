@@ -100,7 +100,7 @@ function App() {
         <Route path="/booking" element={<MakeBookingScreen />} />
         {/* Profile user */}
         <Route path="/edit-profile-user" element={<EditProfileScreen />} />
-        <Route path="/privacy-policy" element={<PrivacyScreen />} />
+        {/* <Route path="/privacy-policy" element={<PrivacyScreen />} /> */}
         <Route path="/change-language" element={<ChangeLanguageScreen />} />
         <Route path="/change-password" element={<ChangePasswordScreen />} />
 
