@@ -17,7 +17,7 @@ import MakeBookingScreen from './User/pages/makeBooking';
 import AdminBookingsApp from './Admin/pages/adminBooking';
 import './i18n';
 import EditProfileScreen from './User/pages/edit_profile';
-import PrivacyScreen from './User/pages/privacy_policy';
+
 import ChangeLanguageScreen from './User/pages/change_languages';
 import ChangePasswordScreen from './User/pages/change_password';
 import NotificationScreen from './Admin/pages/makeNotification';
