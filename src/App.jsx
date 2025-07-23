@@ -29,6 +29,7 @@ import EquipmentPage from './Admin/pages/EquipmentPage';
 import EditBookingScreen from './User/pages/editBookingRoom';
 import ResetPassword from './Auth/resetPassword';
 import ForgotPassword from './Auth/forgotPassword';
+import EditProfile from './Admin/pages/adminEditProfile';
 
 
 
@@ -63,6 +64,7 @@ function App() {
         <Route path="/bookings" element={<AdminBookingsApp />} />
         <Route path="/rooms/:id" element={<RoomManagement />} />
         <Route path="/equipment" element={<EquipmentPage />} />
+        <Route path="/admin-edit-profile" element={<EditProfile />} />
 
         <Route path="/admin-notifications" element={<NotificationsScreens />} />
         <Route path="/advertises" element={<NotificationScreen />} />

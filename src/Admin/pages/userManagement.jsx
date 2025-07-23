@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Users, Search, Filter, Eye, Edit, Trash2, UserCheck, UserX, Mail, Phone, Building, Loader2, MoreVertical } from 'lucide-react';
-import api from '../../api';
+import api from '../../api'; // Assuming this path is correct in your project
 import Swal from 'sweetalert2';
 import { useTranslation } from 'react-i18next'; // Import useTranslation
+import { useFloating, offset, flip, shift, autoUpdate } from '@floating-ui/react'; // Import Floating UI hooks
+import UserDetailsModal from '../component/userDetailModal';
 
 const UserManagement = () => {
   const { t, i18n } = useTranslation(); // Initialize translation hook
@@ -15,10 +17,23 @@ const UserManagement = () => {
   const [filterStatus, setFilterStatus] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [pagination, setPagination] = useState(null);
+
   const [selectedUser, setSelectedUser] = useState(null);
-  const [showActionMenu, setShowActionMenu] = useState(null);
+  const [showActionMenu, setShowActionMenu] = useState(null); // Stores the _id of the user whose menu is open
   const [isProcessing, setIsProcessing] = useState(false);
   const [toast, setToast] = useState({ show: false, message: '', type: '' });
+
+  // Floating UI hook for positioning the action menu
+  const { x, y, refs, strategy } = useFloating({
+    open: showActionMenu !== null, // Only open when showActionMenu has a user ID
+    placement: 'bottom-end', // Prefer bottom-right placement
+    middleware: [
+      offset(8), // Add an 8px offset from the reference element
+      flip(),    // Flip to top-end if there's not enough space at the bottom
+      shift(),   // Shift horizontally/vertically to keep it within the viewport
+    ],
+    whileElementsMounted: autoUpdate, // Automatically update position on scroll/resize
+  });
 
   // Show toast message
   const showToast = (type, message) => {
@@ -133,7 +148,7 @@ const UserManagement = () => {
       console.error('Error updating user status:', err);
     } finally {
       setIsProcessing(false);
-      setShowActionMenu(null);
+      setShowActionMenu(null); // Close the menu after action
     }
   };
 
@@ -204,7 +219,7 @@ const UserManagement = () => {
       console.error('Error deleting user:', err);
     } finally {
       setIsProcessing(false);
-      setShowActionMenu(null);
+      setShowActionMenu(null); // Close the menu after action
     }
   };
 
@@ -228,7 +243,7 @@ const UserManagement = () => {
       console.error('Error updating user role:', err);
     } finally {
       setIsProcessing(false);
-      setShowActionMenu(null);
+      setShowActionMenu(null); // Close the menu after action
     }
   };
 
@@ -498,6 +513,8 @@ const UserManagement = () => {
                             <div className="flex items-center gap-2">
                               <div className="relative">
                                 <button
+                                  // Set the reference element for Floating UI
+                                  ref={showActionMenu === user._id ? refs.setReference : null}
                                   onClick={() => setShowActionMenu(showActionMenu === user._id ? null : user._id)}
                                   className="p-1 text-gray-600 hover:bg-gray-100 rounded"
                                   disabled={isProcessing}
@@ -506,12 +523,24 @@ const UserManagement = () => {
                                 </button>
 
                                 {showActionMenu === user._id && (
-                                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10 border border-gray-200">
+                                  <div
+                                    // Set the floating element for Floating UI
+                                    ref={refs.setFloating}
+                                    style={{
+                                      position: strategy,
+                                      top: y ?? 0, // Use y from Floating UI
+                                      left: x ?? 0, // Use x from Floating UI
+                                      width: '12rem', // Equivalent to w-48
+                                      zIndex: 20, // Ensure it's above other content
+                                    }}
+                                    className="bg-white rounded-md shadow-lg border border-gray-200"
+                                  >
                                     <div className="py-1">
                                       <button
                                         onClick={() => {
                                           setSelectedUser(user);
                                           // You can implement a modal for viewing user details here
+                                          setShowActionMenu(null); // Close menu after action
                                         }}
                                         className={`flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left ${i18n.language === 'lo' ? 'font-lao' : ''}`}
                                       >
@@ -529,7 +558,10 @@ const UserManagement = () => {
 
                                       {user.accessStatus !== 'approved' && (
                                         <button
-                                          onClick={() => updateUserStatus(user._id, 'approved')}
+                                          onClick={() => {
+                                            updateUserStatus(user._id, 'approved');
+                                            setShowActionMenu(null); // Close menu after action
+                                          }}
                                           disabled={isProcessing}
                                           className={`flex items-center px-4 py-2 text-sm text-green-600 hover:bg-green-50 w-full text-left ${i18n.language === 'lo' ? 'font-lao' : ''}`}
                                         >
@@ -539,7 +571,10 @@ const UserManagement = () => {
                                       )}
                                       {user.accessStatus !== 'rejected' && (
                                         <button
-                                          onClick={() => updateUserStatus(user._id, 'rejected')}
+                                          onClick={() => {
+                                            updateUserStatus(user._id, 'rejected');
+                                            setShowActionMenu(null); // Close menu after action
+                                          }}
                                           disabled={isProcessing}
                                           className={`flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 w-full text-left ${i18n.language === 'lo' ? 'font-lao' : ''}`}
                                         >
@@ -547,14 +582,14 @@ const UserManagement = () => {
                                           {t('userManagementScreen.reject')}
                                         </button>
                                       )}
-                                      <button
+                                      {/* <button
                                         onClick={() => deleteUser(user._id)}
                                         disabled={isProcessing}
                                         className={`flex items-center px-4 py-2 text-sm text-red-700 hover:bg-red-50 w-full text-left ${isProcessing ? 'opacity-50 cursor-not-allowed' : ''} ${i18n.language === 'lo' ? 'font-lao' : ''}`}
                                       >
                                         <Trash2 size={14} className="mr-2" />
                                         {t('userManagementScreen.deleteUser')}
-                                      </button>
+                                      </button> */}
                                     </div>
                                   </div>
                                 )}
@@ -566,6 +601,12 @@ const UserManagement = () => {
                     </tbody>
                   </table>
                 </div>
+                {selectedUser && (
+                  <UserDetailsModal
+                    user={selectedUser}
+                    onClose={() => setSelectedUser(null)}
+                  />
+                )}
 
                 {/* Mobile Cards */}
                 <div className="lg:hidden space-y-4">

@@ -1,5 +1,6 @@
 import React from 'react';
-import { Edit2, Trash2, Users, Wifi, Tv, Coffee, Search, Filter } from 'lucide-react';
+import { Edit2, Trash2, Users, Search, Filter, AlertCircle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const RoomList = ({
   rooms,
@@ -15,6 +16,8 @@ const RoomList = ({
   totalPages,
   handlePageChange
 }) => {
+  const { t, i18n } = useTranslation();
+
   const statusColors = {
     available: 'bg-green-100 text-green-800 border-green-200',
     occupied: 'bg-red-100 text-red-800 border-red-200',
@@ -28,7 +31,7 @@ const RoomList = ({
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
           <div className="flex items-center gap-2 text-red-800">
             <AlertCircle size={20} />
-            <span>{error}</span>
+            <span className={i18n.language === 'lo' ? 'font-lao' : ''}>{t('roomList.errorMessage')}: {error}</span>
           </div>
         </div>
       )}
@@ -41,10 +44,10 @@ const RoomList = ({
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
               <input
                 type="text"
-                placeholder="Search rooms..."
+                placeholder={t('roomList.searchRooms')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className={`w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${i18n.language === 'lo' ? 'font-lao' : ''}`}
               />
             </div>
           </div>
@@ -53,11 +56,12 @@ const RoomList = ({
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className={`px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${i18n.language === 'lo' ? 'font-lao' : ''}`}
             >
-              <option value="all">All Status</option>
-              <option value="available">Available</option>
-              <option value="maintenance">Maintenance</option>
+              <option value="all">{t('roomList.allStatus')}</option>
+              <option value="available">{t('roomList.available')}</option>
+              <option value="occupied">{t('roomList.occupied')}</option>
+              <option value="maintenance">{t('roomList.maintenance')}</option>
             </select>
           </div>
         </div>
@@ -65,15 +69,19 @@ const RoomList = ({
 
       {/* Room Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
-        {rooms.map(room => (
-          <RoomCard
-            key={room._id || room.id}
-            room={room}
-            statusColors={statusColors}
-            handleEdit={handleEdit}
-            handleDelete={handleDelete}
-          />
-        ))}
+        {rooms.length > 0 ? (
+          rooms.map(room => (
+            <RoomCard
+              key={room._id || room.id}
+              room={room}
+              statusColors={statusColors}
+              handleEdit={handleEdit}
+              handleDelete={handleDelete}
+            />
+          ))
+        ) : (
+          !loading && <p className={`text-center text-gray-600 col-span-full ${i18n.language === 'lo' ? 'font-lao' : ''}`}>{t('roomList.noRoomsFound')}</p>
+        )}
       </div>
 
       {/* Pagination */}
@@ -82,21 +90,21 @@ const RoomList = ({
           <button
             onClick={() => handlePageChange(currentPage - 1)}
             disabled={currentPage === 1 || loading}
-            className="px-4 py-2 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-400 text-gray-700 rounded-lg transition-colors flex items-center gap-2"
+            className={`px-4 py-2 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-400 text-gray-700 rounded-lg transition-colors flex items-center gap-2 ${i18n.language === 'lo' ? 'font-lao' : ''}`}
           >
-            Previous
+            {t('roomList.previous')}
           </button>
 
-          <span className="text-gray-600">
-            Page {currentPage} of {totalPages}
+          <span className={`text-gray-600 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
+            {t('roomList.page')} {currentPage} {t('roomList.of')} {totalPages}
           </span>
 
           <button
             onClick={() => handlePageChange(currentPage + 1)}
             disabled={currentPage === totalPages || loading}
-            className="px-4 py-2 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-400 text-gray-700 rounded-lg transition-colors flex items-center gap-2"
+            className={`px-4 py-2 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-400 text-gray-700 rounded-lg transition-colors flex items-center gap-2 ${i18n.language === 'lo' ? 'font-lao' : ''}`}
           >
-            Next
+            {t('roomList.next')}
           </button>
         </div>
       )}
@@ -105,6 +113,11 @@ const RoomList = ({
 };
 
 const RoomCard = ({ room, statusColors, handleEdit, handleDelete }) => {
+  const { t, i18n } = useTranslation();
+
+  // Safely access roomType.typeName or fallback to the ID if not populated, or a default string
+  const roomTypeName = room.roomType?.typeName || room.roomType || t('roomList.unknownRoomType');
+
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
       {room.photo && (
@@ -114,7 +127,9 @@ const RoomCard = ({ room, statusColors, handleEdit, handleDelete }) => {
             alt={room.name}
             className="w-full h-full object-cover"
             onError={(e) => {
-              e.target.style.display = 'none';
+              e.target.style.display = 'none'; // Hide broken image icon
+              // Optionally display a fallback icon or text
+              // e.target.closest('div').innerHTML = `<div class="w-full h-full flex items-center justify-center text-gray-400"><ImageIcon size={48} /></div>`;
             }}
           />
         </div>
@@ -122,9 +137,10 @@ const RoomCard = ({ room, statusColors, handleEdit, handleDelete }) => {
       <div className="p-6">
         <div className="flex items-start justify-between mb-4">
           <div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-1">{room.name}</h3>
-            <p className="text-sm text-gray-500 mb-2">{room.roomType}</p>
-            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${statusColors[room.status]}`}>
+            <h3 className={`text-xl font-semibold text-gray-900 mb-1 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>{room.name}</h3>
+            {/* Use the safely accessed roomTypeName here */}
+            <p className={`text-sm text-gray-500 mb-2 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>{roomTypeName}</p>
+            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${statusColors[room.status]} ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
               {room.status?.charAt(0).toUpperCase() + room.status?.slice(1)}
             </span>
           </div>
@@ -145,33 +161,34 @@ const RoomCard = ({ room, statusColors, handleEdit, handleDelete }) => {
         </div>
 
         <div className="space-y-3 mb-4">
-          <div className="flex items-center gap-2 text-gray-600">
+          <div className={`flex items-center gap-2 text-gray-600 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
             <Users size={16} />
-            <span>Capacity: {room.capacity} people</span>
+            <span>{t('roomList.capacity', { capacity: room.capacity })}</span>
           </div>
-          <div className="text-gray-600">
-            <span>Location: {room.location}</span>
+          <div className={`text-gray-600 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
+            <span>{t('roomList.location', { location: room.location })}</span>
           </div>
         </div>
 
         {room.note && (
-          <p className="text-gray-600 text-sm mb-4 line-clamp-2">{room.note}</p>
+          <p className={`text-gray-600 text-sm mb-4 line-clamp-2 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>{room.note}</p>
         )}
 
-        <div className="text-gray-600">
-          <span>Equipment: </span>
+        <div className={`text-gray-600 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
+          <span>{t('roomList.equipment')} </span>
           {room.equipment?.length > 0 ? (
             room.equipment.map((item, index) => {
-              const name = item.equipment?.name || 'Unknown';
+              // Ensure item.equipment is an object with a 'name' property
+              const name = item.equipment?.name || t('roomList.unknownEquipment');
               return (
-                <span key={`eq-${index}`}>
+                <span key={`eq-${index}`} className={i18n.language === 'lo' ? 'font-lao' : ''}>
                   {index > 0 && ', '}
                   {name} ({item.quantity})
                 </span>
               );
             })
           ) : (
-            <span>None</span>
+            <span className={i18n.language === 'lo' ? 'font-lao' : ''}>{t('roomList.none')}</span>
           )}
         </div>
       </div>

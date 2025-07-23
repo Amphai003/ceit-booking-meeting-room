@@ -40,7 +40,6 @@ const FavoriteRoomCard = ({ room, onToggleFavorite, onBook }) => {
       return null;
     }
   }, []);
-
   return (
     <div className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow cursor-pointer">
       <div className="relative h-48 bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
@@ -71,39 +70,56 @@ const FavoriteRoomCard = ({ room, onToggleFavorite, onBook }) => {
 
       <div className="p-4">
         <div className="flex items-start justify-between mb-2">
-          <h3 className={`font-semibold text-lg truncate ${i18n.language === 'lo' ? 'font-lao' : ''}`}>{room.name || t('roomCard.unnamedRoom')}</h3>
+          <h3 className={`font-semibold text-lg truncate ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
+            {room.name || t('roomCard.unnamedRoom')}
+          </h3>
+          {/* Status display - assuming this is correctly placed next to the title */}
+          {/* Note: This block was missing in your provided snippet, so I added it here for completeness */}
+          <div className={`flex items-center space-x-1`}>
+            <div className={`w-2 h-2 rounded-full ${room.status === 'available' ? 'bg-green-500' : 'bg-red-500'}`}></div>
+            <span className={`text-sm ${room.status === 'available' ? 'text-green-500' : 'text-red-500'} ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
+              {room.status === 'available' ? t('userHomeScreen.availableNow') : t('userHomeScreen.unavailableNow')}
+            </span>
+          </div>
         </div>
 
-        <div className={`flex items-center space-x-2 text-sm text-gray-600 mb-2 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
-          <span>{room.roomType || t('roomCard.roomTypeDefault')}</span>
-          <span>•</span>
-          <div className="flex items-center space-x-1">
-            <MapPin className="w-3 h-3" />
+        <div className="space-y-1.5 text-sm text-gray-600 mb-3">
+          {/* Room Type */}
+          <div className={`flex items-center ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
+            <span className="font-medium text-gray-700 mr-1">{t('roomCard.typeLabel')}:</span>
+            <span>{room.roomType?.typeName || t('userHomeScreen.roomTypeDefault')}</span>
+          </div>
+
+          {/* Location */}
+          <div className={`flex items-center ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
+            <MapPin className="w-3.5 h-3.5 text-gray-500 mr-1" />
             <span>{room.location || t('roomCard.locationDefault')}</span>
           </div>
-        </div>
 
-        <div className={`flex items-center space-x-2 mb-3 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
-          <div className="flex items-center space-x-1">
-            <Users className="w-4 h-4 text-gray-500" />
+          {/* Capacity */}
+          <div className={`flex items-center ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
+            <Users className="w-3.5 h-3.5 text-gray-500 mr-1" />
             <span className="text-sm text-gray-600">{room.capacity || 0} {t('roomCard.capacityUnit')}</span>
           </div>
-        </div>
 
-        <div className={`text-gray-600 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
+          {/* Equipment List */}
           {room.equipment?.length > 0 && (
             <div>
-              <p className={`text-sm font-medium text-gray-700 mb-1 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>{t('roomCard.equipmentLabel')}</p>
+              <p className={`text-sm font-medium text-gray-700 mb-1 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
+                {t('roomCard.equipmentLabel')}
+              </p>
               <ul className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
                 {room.equipment.map((item, index) => {
-                  const equipmentName = item.equipment?.name || item.name || 'Unknown';
+                  const equipmentName = item.equipment?.name || item.name || t('roomCard.unknownEquipment');
                   const quantity = item.quantity || 0;
                   const icon = getEquipmentIcon(equipmentName);
 
                   return (
                     <li key={`eq-${index}`} className="flex items-center space-x-1">
                       {icon}
-                      <span className={i18n.language === 'lo' ? 'font-lao' : ''}>{equipmentName} ({quantity})</span>
+                      <span className={i18n.language === 'lo' ? 'font-lao' : ''}>
+                        {equipmentName} {quantity > 1 ? `(${quantity})` : ''}
+                      </span>
                     </li>
                   );
                 })}
@@ -114,7 +130,7 @@ const FavoriteRoomCard = ({ room, onToggleFavorite, onBook }) => {
 
         {room.note && (
           <p className={`text-sm text-gray-600 leading-relaxed line-clamp-2 mt-2 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
-            <span className="font-medium">{t('roomCard.noteLabel')}</span> {room.note}
+            <span className="font-medium text-gray-700">{t('roomCard.noteLabel')}:</span> {room.note}
           </p>
         )}
 

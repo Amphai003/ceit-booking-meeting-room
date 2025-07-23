@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { User, Edit, Shield, FileText, Globe, Lock, LogOut, ArrowLeft, Camera, Loader } from 'lucide-react'; // Added Loader import
+import { User, Edit, Shield, FileText, Globe, Lock, LogOut, ArrowLeft, Camera, Loader, Save } from 'lucide-react'; // Added Save import
 import Swal from 'sweetalert2';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api'; // Assuming 'api' is configured for your backend calls
 
+// AdminSettings Component
 const AdminSettings = () => {
   const [user, setUser] = useState({
     firstName: '',
@@ -134,10 +135,10 @@ const AdminSettings = () => {
 
       // Extract the image URL from the upload response, handle various possible response keys
       const imageUrl = uploadResponse.data.Location || 
-                       uploadResponse.data.url || 
-                       uploadResponse.data.imageUrl || 
-                       uploadResponse.data.data?.url || // Added data.url if backend nests it
-                       uploadResponse.data; // Fallback to direct data if it's just the URL
+                         uploadResponse.data.url || 
+                         uploadResponse.data.imageUrl || 
+                         uploadResponse.data.data?.url || // Added data.url if backend nests it
+                         uploadResponse.data; // Fallback to direct data if it's just the URL
 
       if (!imageUrl || typeof imageUrl !== 'string') {
         throw new Error('Upload successful but no valid image URL was returned.');
@@ -187,10 +188,10 @@ const AdminSettings = () => {
   };
 
   // Navigation handlers
-  const handleEditProfile = () => navigate('/edit-profile');
+  const handleEditProfile = () => navigate('/admin-edit-profile');
   const handlePrivacyPolicy = () => navigate('/privacy-policy');
-  const handleTermsConditions = () => navigate('/term-condition');
-  const handleChangeLanguage = () => navigate('/change-language');
+  // const handleTermsConditions = () => navigate('/term-condition'); // Commented out
+  // const handleChangeLanguage = () => navigate('/change-language'); // Commented out
   const handleChangePassword = () => navigate('/change-password');
 
   const handleLogout = () => {
@@ -247,12 +248,12 @@ const AdminSettings = () => {
       onClick: handleEditProfile, 
       color: 'bg-blue-500 hover:bg-blue-600' // Lighter blue
     },
-    { 
-      icon: Globe, 
-      label: 'Change Language', 
-      onClick: handleChangeLanguage, 
-      color: 'bg-blue-500 hover:bg-blue-600' 
-    },
+    // { // Commented out as requested
+    //   icon: Globe, 
+    //   label: 'Change Language', 
+    //   onClick: handleChangeLanguage, 
+    //   color: 'bg-blue-500 hover:bg-blue-600' 
+    // },
     { 
       icon: Lock, 
       label: 'Change Password', 
@@ -265,12 +266,12 @@ const AdminSettings = () => {
       onClick: handlePrivacyPolicy, 
       color: 'bg-blue-500 hover:bg-blue-600' 
     },
-    { 
-      icon: FileText, 
-      label: 'Terms & Conditions', 
-      onClick: handleTermsConditions, 
-      color: 'bg-blue-500 hover:bg-blue-600' 
-    },
+    // { // Commented out as requested
+    //   icon: FileText, 
+    //   label: 'Terms & Conditions', 
+    //   onClick: handleTermsConditions, 
+    //   color: 'bg-blue-500 hover:bg-blue-600' 
+    // },
     { 
       icon: LogOut, 
       label: 'Logout', 
@@ -282,14 +283,14 @@ const AdminSettings = () => {
   return (
     <div className="min-h-screen bg-gray-50 font-sans antialiased">
       {/* Fixed Header with Back Button */}
-      <div className="fixed top-0 left-0 right-0 bg-blue-500 text-white z-20 shadow-md"> {/* Slightly lighter blue, added shadow */}
+      <div className="fixed top-0 left-0 right-0 bg-white text-gray-900 z-20 shadow-md"> {/* Changed to white background, dark text */}
         <div className="px-4 py-4 flex items-center max-w-2xl mx-auto"> {/* Centered header content */}
           <button 
             onClick={handleNavigateBack}
-            className="mr-4 p-2 rounded-full hover:bg-blue-600 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-300"
+            className="mr-4 p-2 rounded-full hover:bg-gray-100 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-300"
             aria-label="Go back"
           >
-            <ArrowLeft className="w-6 h-6" />
+            <ArrowLeft className="w-6 h-6 text-gray-700" /> {/* Darker icon */}
           </button>
           <h1 className="text-xl sm:text-2xl font-bold flex-grow text-center pr-10">Admin Settings</h1> {/* Increased pr for centering */}
         </div>
@@ -379,5 +380,6 @@ const AdminSettings = () => {
     </div>
   );
 };
+
 
 export default AdminSettings;
