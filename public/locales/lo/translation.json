@@ -138,7 +138,17 @@
     "noteLabel": "ໝາຍເຫດ:",
     "bookNowButton": "ຈອງດຽວນີ້",
     "typeLabel": "ປະເພດ:",
-    "unknownEquipment": "ອຸປະກອນບໍ່ຮູ້ຈັກ"
+    "unknownEquipment": "ອຸປະກອນບໍ່ຮູ້ຈັກ",
+      "capacity": "ຄວາມສາມາດບັນຈຸ: {{capacity}} ຄົນ",
+    "equipment": "ອຸປະກອນ:",
+    "note": "ໝາຍເຫດ: {{note}}",
+    "viewDetails": "ເບິ່ງລາຍລະອຽດ",
+    "editRoom": "ແກ້ໄຂຫ້ອງ",
+
+    "available": "ວ່າງ",
+    "occupied": "ບໍ່ວ່າງ",
+    "maintenance": "ກຳລັງສ້ອມແປງ",
+    "photoAlt": "ຮູບພາບຂອງ {{roomName}}"
   },
   "favoriteRoomsScreen": {
     "headerTitle": "ຫ້ອງທີ່ມັກ",
@@ -159,6 +169,12 @@
     "errorRemovingText": "ບໍ່ສາມາດລຶບຫ້ອງໄດ້. ກະລຸນາລອງໃໝ່."
   },
   "bookingScreen": {
+      "confirmedStatus": "ຢືນຢັນແລ້ວ",
+    "approvedStatus": "ອະນຸມັດແລ້ວ",
+    "pendingStatus": "ລໍຖ້າການອະນຸມັດ",
+    "completedStatus": "ສໍາເລັດແລ້ວ",
+    "cancelledStatus": "ຍົກເລີກແລ້ວ",
+    "rejectedStatus": "ຖືກປະຕິເສດ",
     "loadingBookings": "ກຳລັງໂຫຼດການຈອງ...",
     "printButton": "ພິມເປັນ PDF",
     "bookingIdLabel": "ລະຫັດການຈອງ",
@@ -279,6 +295,77 @@
     "roomStatus": "ສະຖານະຫ້ອງ",
     "addNewRoom": "ເພີ່ມຫ້ອງໃໝ່"
   },
+  "editBookingScreen": {
+    "backButton": "ກັບຄືນ",
+    "editBookingHeader": "ແກ້ໄຂການຈອງ",
+    "roomInfoCardTitle": "ຂໍ້ມູນຫ້ອງ",
+    "unknownLocation": "ສະຖານທີ່ບໍ່ລະບຸ",
+    "capacityLabel": "ຄວາມຈຸ",
+    "equipmentLabel": "ອຸປະກອນ",
+    "unknownEquipment": "ບໍ່ຮູ້ຈັກ",
+    "bookingDateLabel": "ວັນທີຈອງ",
+    "startTimeLabel": "ເວລາເລີ່ມຕົ້ນ",
+    "endTimeLabel": "ເວລາສິ້ນສຸດ",
+    "purposeLabel": "ຈຸດປະສົງ",
+    "purposePlaceholder": "ອະທິບາຍຈຸດປະສົງຂອງການຈອງໂດຍຫຍໍ້...",
+    "attendeesLabel": "ຈຳນວນຜູ້ເຂົ້າຮ່ວມ",
+    "attendeesPlaceholder": "ຕົວຢ່າງ: 10",
+    "exceedsCapacity": "ຈຳນວນຜູ້ເຂົ້າຮ່ວມ ({count}) ເກີນຄວາມຈຸຂອງຫ້ອງ ({capacity}).",
+    "negativeAttendees": "ຈຳນວນຜູ້ເຂົ້າຮ່ວມບໍ່ສາມາດເປັນຄ່າລົບໄດ້.",
+    "requestEquipmentTitle": "ຂໍອຸປະກອນ (ທາງເລືອກ)",
+    "equipmentAvailable": "{count} ອັນທີ່ມີ",
+    "quantityNeeded": "ຈຳນວນທີ່ຕ້ອງການ:",
+    "noEquipmentAvailable": "ບໍ່ມີອຸປະກອນສໍາລັບຫ້ອງນີ້.",
+    "updateBookingButton": "ອັບເດດການຈອງ",
+    "updateBookingLoading": "ກຳລັງອັບເດດການຈອງ...",
+    "loadingDetails": "ກຳລັງໂຫຼດລາຍລະອຽດການຈອງ...",
+    "loadingErrorTitle": "ຜິດພາດໃນການໂຫຼດການຈອງ",
+    "loadingErrorText": "ຂໍ້ຜິດພາດ: {error}",
+    "goBackButton": "ກັບຄືນ",
+    "updateSuccessTitle": "ອັບເດດການຈອງສຳເລັດ!",
+    "updateSuccessText": "ການຈອງຂອງທ່ານໄດ້ຮັບການອັບເດດສຳເລັດແລ້ວ",
+    "updateFailedTitle": "ອັບເດດບໍ່ສຳເລັດ",
+    "updateFailedText": "ບໍ່ສາມາດອັບເດດການຈອງໄດ້",
+    "validationErrorTitle": "ຂໍ້ຜິດພາດໃນການກວດສອບ",
+    "pastDateError": "ວັນທີຈອງບໍ່ສາມາດເປັນວັນທີທີ່ຜ່ານມາໄດ້.",
+    "purposeRequiredError": "ກະລຸນາໃສ່ຈຸດປະສົງຂອງການຈອງ",
+    "timeRangeError": "ເວລາສິ້ນສຸດຕ້ອງຫຼັງຈາກເວລາເລີ່ມຕົ້ນ."
+  },
+  "editProfileScreen": {
+    "editProfileHeader": "ແກ້ໄຂໂປຣໄຟລ໌",
+    "backButton": "ກັບຄືນ",
+    "loadingProfile": "ກຳລັງໂຫຼດຂໍ້ມູນໂປຣໄຟລ໌...",
+    "errorTitle": "ຜິດພາດ",
+    "loadingErrorText": "ບໍ່ສາມາດໂຫຼດຂໍ້ມູນໂປຣໄຟລ໌ໄດ້",
+    "saveChangesButton": "ບັນທຶກການປ່ຽນແປງ",
+    "savingButton": "ກຳລັງບັນທຶກ...",
+    "photoSectionTitle": "ຮູບໂປຣໄຟລ໌",
+    "photoHelpText": "ແຕະທີ່ໄອຄອນກ້ອງຖ່າຍຮູບເພື່ອປ່ຽນຮູບໂປຣໄຟລ໌ຂອງທ່ານ",
+    "firstNameLabel": "ຊື່",
+    "firstNamePlaceholder": "ກະລຸນາໃສ່ຊື່ຂອງທ່ານ",
+    "lastNameLabel": "ນາມສະກຸນ",
+    "lastNamePlaceholder": "ກະລຸນາໃສ່ນາມສະກຸນຂອງທ່ານ",
+    "emailLabel": "ອີເມວ",
+    "emailPlaceholder": "ທີ່ຢູ່ອີເມວ",
+    "emailHelpText": "ບໍ່ສາມາດປ່ຽນອີເມວໄດ້",
+    "phoneNumberLabel": "ເບີໂທລະສັບ",
+    "phoneNumberPlaceholder": "ກະລຸນາໃສ່ເບີໂທລະສັບຂອງທ່ານ",
+    "departmentLabel": "ພະແນກ",
+    "departmentPlaceholder": "ກະລຸນາໃສ່ພະແນກຂອງທ່ານ",
+    "uploadSuccessTitle": "ສຳເລັດ!",
+    "uploadSuccessText": "ອັບເດດຮູບໂປຣໄຟລ໌ສຳເລັດແລ້ວ",
+    "uploadFailedTitle": "ອັບໂຫຼດບໍ່ສຳເລັດ",
+    "uploadFailedText": "ບໍ່ສາມາດອັບໂຫຼດຮູບໂປຣໄຟລ໌ໄດ້",
+    "invalidFileTitle": "ໄຟລ໌ບໍ່ຖືກຕ້ອງ",
+    "invalidFileText": "ກະລຸນາເລືອກໄຟລ໌ຮູບພາບ (JPEG, PNG, ແລະອື່ນໆ)",
+    "fileTooLargeTitle": "ໄຟລ໌ໃຫຍ່ເກີນໄປ",
+    "fileTooLargeText": "ກະລຸນາເລືອກຮູບພາບທີ່ມີຂະໜາດນ້ອຍກວ່າ 5MB",
+    "saveSuccessTitle": "ສຳເລັດ!",
+    "saveSuccessText": "ອັບເດດໂປຣໄຟລ໌ສຳເລັດແລ້ວ",
+    "saveFailedTitle": "ບັນທຶກບໍ່ສຳເລັດ",
+    "saveFailedText": "ບໍ່ສາມາດອັບເດດໂປຣໄຟລ໌ໄດ້"
+  },
+
   "sidebar": {
     "roomAdmin": "RoomAdmin",
     "dashboard": "ໜ້າຫຼັກ",
@@ -542,7 +629,21 @@
     "previous": "ກ່ອນໜ້າ",
     "page": "ໜ້າ",
     "of": "ຂອງ",
-    "next": "ຕໍ່ໄປ"
+    "next": "ຕໍ່ໄປ",
+
+    "noRoomsFound": "ບໍ່ພົບຫ້ອງໃດ",
+   
+    "unknownRoomType": "ປະເພດຫ້ອງບໍ່ຮູ້ຈັກ",
+    "unknownEquipment": "ອຸປະກອນບໍ່ຮູ້ຈັກ"
+  
+  },
+
+  "upcomingMeetings": {
+    "title": "ກອງປະຊຸມທີ່ຈະມາເຖິງ",
+    "room": "ຫ້ອງ: {{room}}",
+    "attendees": "{{numberOfAttendees}} ຜູ້ເຂົ້າຮ່ວມ",
+    "noMeetings": "ບໍ່ມີກອງປະຊຸມທີ່ຖືກກຳນົດໄວ້",
+    "viewAll": "ເບິ່ງກອງປະຊຸມທັງໝົດ"
   },
   "notificationScreen": {
     "sendNotification": "ສົ່ງແຈ້ງເຕືອນ",
@@ -580,6 +681,8 @@
     "failedToLoadUserList": "ບໍ່ສາມາດໂຫຼດລາຍຊື່ຜູ້ໃຊ້ໄດ້",
     "failedToSendNotification": "ບໍ່ສາມາດສົ່ງແຈ້ງເຕືອນໄດ້"
   },
+
+  
   "adminBookingsApp": {
     "loadingBookings": "ກຳລັງໂຫຼດການຈອງ...",
     "errorTitle": "ຂໍ້ຜິດພາດ",

@@ -129,6 +129,7 @@
     "failedToApplyFilters": "Failed to Apply Filters",
     "unableToFetchRoomsWithFilters": "Unable to fetch rooms with the applied filters from the server."
   },
+
   "roomCard": {
     "unnamedRoom": "Unnamed Room",
     "roomTypeDefault": "Room",
@@ -138,8 +139,19 @@
     "noteLabel": "Note:",
     "bookNowButton": "Book Now",
     "typeLabel": "Type:",
-    "unknownEquipment": "Unknown Equipment"
+    "unknownEquipment": "Unknown Equipment",
+     "capacity": "Capacity: {{capacity}} people",
+    "equipment": "Equipment:",
+    "note": "Note: {{note}}",
+    "viewDetails": "View Details",
+    "editRoom": "Edit Room",
+
+    "available": "Available",
+    "occupied": "Occupied",
+    "maintenance": "Maintenance",
+    "photoAlt": "Photo of {{roomName}}"
   },
+
    "favoriteRoomsScreen": {
     "headerTitle": "Favorite Rooms",
     "searchPlaceholder": "Search in your favorites...",
@@ -158,12 +170,87 @@
     "errorRemovingTitle": "Error!",
     "errorRemovingText": "Could not remove the room. Please try again."
   },
+   "editBookingScreen": {
+    "backButton": "Back",
+    "editBookingHeader": "Edit Booking",
+    "roomInfoCardTitle": "Room Info",
+    "unknownLocation": "Unknown location",
+    "capacityLabel": "Capacity",
+    "equipmentLabel": "Equipment",
+    "unknownEquipment": "Unknown",
+    "bookingDateLabel": "Booking Date",
+    "startTimeLabel": "Start Time",
+    "endTimeLabel": "End Time",
+    "purposeLabel": "Purpose",
+    "purposePlaceholder": "Briefly describe the purpose of your booking...",
+    "attendeesLabel": "Number of Attendees",
+    "attendeesPlaceholder": "e.g., 10",
+    "exceedsCapacity": "Number of attendees ({count}) exceeds room capacity ({capacity}).",
+    "negativeAttendees": "Number of attendees cannot be negative.",
+    "requestEquipmentTitle": "Request Equipment (Optional)",
+    "equipmentAvailable": "{count} available",
+    "quantityNeeded": "Quantity needed:",
+    "noEquipmentAvailable": "No equipment available for this room.",
+    "updateBookingButton": "Update Booking",
+    "updateBookingLoading": "Updating Booking...",
+    "loadingDetails": "Loading booking details...",
+    "loadingErrorTitle": "Error Loading Booking",
+    "loadingErrorText": "Error: {error}",
+    "goBackButton": "Go Back",
+    "updateSuccessTitle": "Booking Updated!",
+    "updateSuccessText": "Your booking has been successfully updated",
+    "updateFailedTitle": "Update Failed",
+    "updateFailedText": "Could not update the booking",
+    "validationErrorTitle": "Validation Error",
+    "pastDateError": "Booking date cannot be in the past.",
+    "purposeRequiredError": "Please provide a purpose for the booking.",
+    "timeRangeError": "End time must be after start time."
+  },
+   "editProfileScreen": {
+    "editProfileHeader": "Edit Profile",
+    "backButton": "Back",
+    "loadingProfile": "Loading profile...",
+    "errorTitle": "Error",
+    "loadingErrorText": "Failed to load profile data",
+    "saveChangesButton": "Save Changes",
+    "savingButton": "Saving...",
+    "photoSectionTitle": "Profile Photo",
+    "photoHelpText": "Tap the camera icon to change your profile picture",
+    "firstNameLabel": "First Name",
+    "firstNamePlaceholder": "Enter your first name",
+    "lastNameLabel": "Last Name",
+    "lastNamePlaceholder": "Enter your last name",
+    "emailLabel": "Email",
+    "emailPlaceholder": "Email address",
+    "emailHelpText": "Email cannot be changed",
+    "phoneNumberLabel": "Phone Number",
+    "phoneNumberPlaceholder": "Enter your phone number",
+    "departmentLabel": "Department",
+    "departmentPlaceholder": "Enter your department",
+    "uploadSuccessTitle": "Success!",
+    "uploadSuccessText": "Profile picture updated successfully",
+    "uploadFailedTitle": "Upload Failed",
+    "uploadFailedText": "Failed to upload profile picture",
+    "invalidFileTitle": "Invalid File",
+    "invalidFileText": "Please select an image file (JPEG, PNG, etc.)",
+    "fileTooLargeTitle": "File Too Large",
+    "fileTooLargeText": "Please select an image smaller than 5MB",
+    "saveSuccessTitle": "Success!",
+    "saveSuccessText": "Profile updated successfully",
+    "saveFailedTitle": "Save Failed",
+    "saveFailedText": "Failed to update profile"
+  },
   "bookingScreen": {
     "loadingBookings": "Loading bookings...",
     "myBookingsHeader": "My Bookings",
     "allBookingsTab": "All Bookings",
     "contactPhoneLabel": "Contact Phone:", 
-    
+     "confirmedStatus": "Confirmed",
+    "approvedStatus": "Approved",
+    "pendingStatus": "Pending",
+    "completedStatus": "Completed",
+    "cancelledStatus": "Cancelled",
+    "rejectedStatus": "Rejected",
     "historyTab": "History",
     "searchPlaceholder": "Search bookings by room, location, or ID...",
     "noBookingsFound": "No Bookings Found",
@@ -543,8 +630,22 @@
     "previous": "Previous",
     "page": "Page",
     "of": "of",
-    "next": "Next"
+    "next": "Next",
+
+    "noRoomsFound": "No rooms found.",
+
+    "unknownRoomType": "Unknown Room Type",
+    "unknownEquipment": "Unknown Equipment"
+
    },
+    "upcomingMeetings": {
+    "title": "Upcoming Meetings",
+    "room": "Room: {{room}}",
+    "attendees": "{{numberOfAttendees}} attendees",
+    "noMeetings": "No upcoming meetings scheduled.",
+    "viewAll": "View All Meetings"
+  },
+
    "adminBookingsApp": {
     "loadingBookings": "Loading bookings...",
     "errorTitle": "Error",

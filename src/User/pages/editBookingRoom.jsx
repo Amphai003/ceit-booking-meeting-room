@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   ArrowLeft,
   Calendar,
   Clock,
   Edit,
   Check,
-  Users, // Used for attendee count icon
+  Users,
   MapPin
 } from 'lucide-react';
 import api from '../../api';
@@ -18,6 +19,7 @@ const EditBookingScreen = () => {
   const { state } = useLocation();
   const { bookingId } = useParams();
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
@@ -31,7 +33,7 @@ const EditBookingScreen = () => {
     purpose: '',
     requestedEquipment: [],
     equipmentNotes: '',
-    numberOfAttendees: 0 // Changed to a number
+    numberOfAttendees: 0
   });
 
   const [room, setRoom] = useState(null);
@@ -48,22 +50,14 @@ const EditBookingScreen = () => {
         }
 
         const bookingResponse = await api.get(`/bookings/${bookingId}`);
-        let bookingData = null;
-
-        if (bookingResponse.data?.data) {
-          bookingData = bookingResponse.data.data;
-        } else if (bookingResponse.data && typeof bookingResponse.data === 'object') {
-          bookingData = bookingResponse.data;
-        } else if (Array.isArray(bookingResponse.data) && bookingResponse.data.length > 0) {
-          bookingData = bookingResponse.data[0];
-        }
+        const bookingData = bookingResponse.data?.data || bookingResponse.data;
 
         if (!bookingData || typeof bookingData !== 'object') {
           throw new Error('Booking data not found or is empty.');
         }
 
         setBooking(bookingData);
-
+        
         const roomData = bookingData.roomId;
         if (!roomData) {
           throw new Error('Room information not found in booking data');
@@ -77,20 +71,25 @@ const EditBookingScreen = () => {
           purpose: bookingData.purpose || '',
           requestedEquipment: Array.isArray(bookingData.requestedEquipment) ? bookingData.requestedEquipment : [],
           equipmentNotes: bookingData.equipmentNotes || '',
-          numberOfAttendees: bookingData.numberOfAttendees || 0 // Initialize from the numerical field
+          numberOfAttendees: bookingData.numberOfAttendees || 0
         });
 
       } catch (err) {
         console.error('Error fetching booking data:', err);
-        const errorMessage = err.response?.data?.message || err.message || 'Failed to load booking data';
+        const errorMessage = err.response?.data?.message || err.message || t('editBookingScreen.loadingErrorText', { error: 'Unknown Error' });
         setError(errorMessage);
 
         Swal.fire({
           icon: 'error',
-          title: 'Error Loading Booking',
+          title: t('editBookingScreen.loadingErrorTitle'),
           text: errorMessage,
-          confirmButtonText: 'Go Back',
-          confirmButtonColor: '#000000'
+          confirmButtonText: t('editBookingScreen.goBackButton'),
+          confirmButtonColor: '#000000',
+          customClass: {
+            title: i18n.language === 'lo' ? 'font-lao' : '',
+            htmlContainer: i18n.language === 'lo' ? 'font-lao' : '',
+            confirmButton: i18n.language === 'lo' ? 'font-lao' : ''
+          }
         }).then(() => {
           navigate(-1);
         });
@@ -100,18 +99,18 @@ const EditBookingScreen = () => {
     };
 
     fetchData();
-  }, [bookingId, navigate]);
+  }, [bookingId, navigate, t, i18n.language]);
 
   useEffect(() => {
     const start = new Date(`2000/01/01 ${formData.startTime}`);
     const end = new Date(`2000/01/01 ${formData.endTime}`);
 
     if (start >= end) {
-      setTimeError('End time must be after start time.');
+      setTimeError(t('editBookingScreen.timeRangeError'));
     } else {
       setTimeError(null);
     }
-  }, [formData.startTime, formData.endTime]);
+  }, [formData.startTime, formData.endTime, t]);
 
   const handleTimeChange = (field, e) => {
     setFormData(prev => ({ ...prev, [field]: e.target.value }));
@@ -119,8 +118,8 @@ const EditBookingScreen = () => {
 
   const handleEquipmentChange = (equip, action = 'toggle', newQuantity = 1) => {
     setFormData(prev => {
-      const existingIndex = prev.requestedEquipment.findIndex(e => e.name === (equip.equipment?.name || equip.name));
       const equipName = equip.equipment?.name || equip.name;
+      const existingIndex = prev.requestedEquipment.findIndex(e => e.name === equipName);
 
       if (action === 'toggle') {
         if (existingIndex >= 0) {
@@ -137,18 +136,16 @@ const EditBookingScreen = () => {
             }]
           };
         }
-      } else if (action === 'quantity') {
-        if (existingIndex >= 0) {
-          const newEquipment = [...prev.requestedEquipment];
-          const totalAvailableQuantity = room.equipment.find(e => (e.equipment?.name || e.name) === equipName)?.quantity || 1;
-          const safeQuantity = Math.min(newQuantity, totalAvailableQuantity);
+      } else if (action === 'quantity' && existingIndex >= 0) {
+        const newEquipment = [...prev.requestedEquipment];
+        const totalAvailableQuantity = room.equipment.find(e => (e.equipment?.name || e.name) === equipName)?.quantity || 1;
+        const safeQuantity = Math.min(newQuantity, totalAvailableQuantity);
 
-          newEquipment[existingIndex] = {
-            ...newEquipment[existingIndex],
-            requestedQuantity: safeQuantity
-          };
-          return { ...prev, requestedEquipment: newEquipment };
-        }
+        newEquipment[existingIndex] = {
+          ...newEquipment[existingIndex],
+          requestedQuantity: safeQuantity
+        };
+        return { ...prev, requestedEquipment: newEquipment };
       }
       return prev;
     });
@@ -159,18 +156,18 @@ const EditBookingScreen = () => {
       return timeError;
     }
     if (!formData.purpose.trim()) {
-      return 'Please provide a purpose for the booking';
+      return t('editBookingScreen.purposeRequiredError');
     }
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     if (formData.bookingDate.setHours(0, 0, 0, 0) < today.getTime()) {
-      return 'Booking date cannot be in the past.';
+      return t('editBookingScreen.pastDateError');
     }
     if (formData.numberOfAttendees < 0) {
-        return 'Number of attendees cannot be negative.';
+        return t('editBookingScreen.negativeAttendees');
     }
     if (formData.numberOfAttendees > (room?.capacity || Infinity)) {
-        return `Number of attendees (${formData.numberOfAttendees}) exceeds room capacity (${room?.capacity || 'N/A'}).`;
+      return t('editBookingScreen.exceedsCapacity', { count: formData.numberOfAttendees, capacity: room?.capacity || 'N/A' });
     }
     return null;
   };
@@ -182,9 +179,14 @@ const EditBookingScreen = () => {
     if (validationError) {
       Swal.fire({
         icon: 'error',
-        title: 'Validation Error',
+        title: t('editBookingScreen.validationErrorTitle'),
         text: validationError,
-        confirmButtonColor: '#000000'
+        confirmButtonColor: '#000000',
+        customClass: {
+          title: i18n.language === 'lo' ? 'font-lao' : '',
+          htmlContainer: i18n.language === 'lo' ? 'font-lao' : '',
+          confirmButton: i18n.language === 'lo' ? 'font-lao' : ''
+        }
       });
       return;
     }
@@ -202,7 +204,7 @@ const EditBookingScreen = () => {
         bookingDate: localBookingDate,
         startTime: formData.startTime,
         endTime: formData.endTime,
-        numberOfAttendees: Number(formData.numberOfAttendees), // Ensure it's a number
+        numberOfAttendees: Number(formData.numberOfAttendees),
         requestedEquipment: formData.requestedEquipment.map(item => ({
           name: item.name,
           requestedQuantity: item.requestedQuantity
@@ -213,23 +215,33 @@ const EditBookingScreen = () => {
 
       Swal.fire({
         icon: 'success',
-        title: 'Booking Updated!',
-        text: 'Your booking has been successfully updated',
+        title: t('editBookingScreen.updateSuccessTitle'),
+        text: t('editBookingScreen.updateSuccessText'),
         timer: 2000,
-        showConfirmButton: false
+        showConfirmButton: false,
+        customClass: {
+          title: i18n.language === 'lo' ? 'font-lao' : '',
+          htmlContainer: i18n.language === 'lo' ? 'font-lao' : ''
+        }
       });
 
       setTimeout(() => navigate(`/user-bookings`), 2000);
     } catch (err) {
       console.error('Error updating booking:', err);
-      setError(err.response?.data?.message || err.message || 'Failed to update booking');
+      const errorMessage = err.response?.data?.message || err.message || t('editBookingScreen.updateFailedText');
+      setError(errorMessage);
 
       Swal.fire({
         icon: 'error',
-        title: 'Update Failed',
-        text: err.response?.data?.message || err.message || 'Could not update the booking',
+        title: t('editBookingScreen.updateFailedTitle'),
+        text: errorMessage,
         confirmButtonText: 'OK',
-        confirmButtonColor: '#000000'
+        confirmButtonColor: '#000000',
+        customClass: {
+          title: i18n.language === 'lo' ? 'font-lao' : '',
+          htmlContainer: i18n.language === 'lo' ? 'font-lao' : '',
+          confirmButton: i18n.language === 'lo' ? 'font-lao' : ''
+        }
       });
     } finally {
       setIsSubmitting(false);
@@ -241,7 +253,7 @@ const EditBookingScreen = () => {
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading booking details...</p>
+          <p className={`text-gray-600 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>{t('editBookingScreen.loadingDetails')}</p>
         </div>
       </div>
     );
@@ -250,15 +262,15 @@ const EditBookingScreen = () => {
   if (error || !room || !booking) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-center p-6 max-w-md">
+        <div className={`text-center p-6 max-w-md ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
           <div className="text-red-500 text-5xl mb-4">⚠️</div>
-          <h2 className="text-xl font-semibold mb-2">Error Loading Booking</h2>
-          <p className="text-gray-600 mb-6">{error || 'No booking information available'}</p>
+          <h2 className="text-xl font-semibold mb-2">{t('editBookingScreen.loadingErrorTitle')}</h2>
+          <p className="text-gray-600 mb-6">{error || t('editBookingScreen.loadingErrorText', { error: 'No data' })}</p>
           <button
             onClick={() => navigate(-1)}
             className="bg-black text-white px-6 py-2 rounded-lg hover:bg-gray-800 transition-colors"
           >
-            Go Back
+            {t('editBookingScreen.goBackButton')}
           </button>
         </div>
       </div>
@@ -271,15 +283,15 @@ const EditBookingScreen = () => {
       <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
         <button
           onClick={() => navigate(-1)}
-          className="flex items-center space-x-2 text-gray-600 hover:text-black"
+          className={`flex items-center space-x-2 text-gray-600 hover:text-black ${i18n.language === 'lo' ? 'font-lao' : ''}`}
         >
           <ArrowLeft className="w-5 h-5" />
-          <span className="font-medium">Back</span>
+          <span className="font-medium">{t('editBookingScreen.backButton')}</span>
         </button>
 
-        <h1 className="text-lg font-semibold">Edit Booking</h1>
+        <h1 className={`text-lg font-semibold ${i18n.language === 'lo' ? 'font-lao' : ''}`}>{t('editBookingScreen.editBookingHeader')}</h1>
 
-        <div className="w-12"></div> {/* Placeholder to keep title centered */}
+        <div className="w-12"></div>
       </div>
 
       {/* Main Content */}
@@ -296,7 +308,7 @@ const EditBookingScreen = () => {
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
-                <div className="text-4xl font-bold text-gray-600">
+                <div className={`text-4xl font-bold text-gray-600 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
                   {room.name.substring(0, 2).toUpperCase()}
                 </div>
               </div>
@@ -304,25 +316,25 @@ const EditBookingScreen = () => {
           </div>
 
           <div className="p-4">
-            <h2 className="text-xl font-semibold mb-2">{room.name}</h2>
+            <h2 className={`text-xl font-semibold mb-2 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>{room.name}</h2>
 
             <div className="flex flex-wrap gap-3 mb-3">
-              <div className="flex items-center text-sm text-gray-600">
+              <div className={`flex items-center text-sm text-gray-600 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
                 <MapPin className="w-4 h-4 mr-1" />
-                <span>{room.location || 'Unknown location'}</span>
+                <span>{room.location || t('editBookingScreen.unknownLocation')}</span>
               </div>
 
-              <div className="flex items-center text-sm text-gray-600">
+              <div className={`flex items-center text-sm text-gray-600 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
                 <Users className="w-4 h-4 mr-1" />
-                <span>Capacity: {room.capacity || 'N/A'}</span>
+                <span>{t('editBookingScreen.capacityLabel')}: {room.capacity || 'N/A'}</span>
               </div>
             </div>
 
             {room.equipment?.length > 0 && (
               <div className="mb-3">
-                <div className="text-sm text-gray-600">
-                  Equipment: {room.equipment.map((item, index) => {
-                    const name = item.equipment?.name || item.name || 'Unknown';
+                <div className={`text-sm text-gray-600 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
+                  {t('editBookingScreen.equipmentLabel')}: {room.equipment.map((item, index) => {
+                    const name = item.equipment?.name || item.name || t('editBookingScreen.unknownEquipment');
                     return (
                       <span key={index}>
                         {index > 0 && ', '}
@@ -340,15 +352,15 @@ const EditBookingScreen = () => {
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Booking Date */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Booking Date
+            <label className={`block text-sm font-medium text-gray-700 mb-1 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
+              {t('editBookingScreen.bookingDateLabel')}
             </label>
             <div className="relative">
               <DatePicker
                 selected={formData.bookingDate}
                 onChange={(date) => setFormData({ ...formData, bookingDate: date })}
                 minDate={new Date()}
-                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-black focus:border-black"
+                className={`w-full p-2 border border-gray-300 rounded-lg focus:ring-black focus:border-black ${i18n.language === 'lo' ? 'font-lao' : ''}`}
               />
               <Calendar className="absolute right-3 top-3 text-gray-400" />
             </div>
@@ -357,58 +369,58 @@ const EditBookingScreen = () => {
           {/* Time Range */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Start Time
+              <label className={`block text-sm font-medium text-gray-700 mb-1 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
+                {t('editBookingScreen.startTimeLabel')}
               </label>
               <div className="relative">
                 <input
                   type="time"
                   value={formData.startTime}
                   onChange={(e) => handleTimeChange('startTime', e)}
-                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-black focus:border-black"
+                  className={`w-full p-2 border border-gray-300 rounded-lg focus:ring-black focus:border-black ${i18n.language === 'lo' ? 'font-lao' : ''}`}
                 />
-                <Clock className="absolute right-3 top-3 text-gray-400 pointer-events-none" />
+                {/* <Clock className="absolute right-3 top-3 text-gray-400 pointer-events-none" /> */}
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                End Time
+              <label className={`block text-sm font-medium text-gray-700 mb-1 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
+                {t('editBookingScreen.endTimeLabel')}
               </label>
               <div className="relative">
                 <input
                   type="time"
                   value={formData.endTime}
                   onChange={(e) => handleTimeChange('endTime', e)}
-                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-black focus:border-black"
+                  className={`w-full p-2 border border-gray-300 rounded-lg focus:ring-black focus:border-black ${i18n.language === 'lo' ? 'font-lao' : ''}`}
                 />
-                <Clock className="absolute right-3 top-3 text-gray-400 pointer-events-none" />
+                {/* <Clock className="absolute right-3 top-3 text-gray-400 pointer-events-none" /> */}
               </div>
             </div>
           </div>
           {timeError && (
-            <p className="text-red-500 text-sm mt-1">{timeError}</p>
+            <p className={`text-red-500 text-sm mt-1 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>{timeError}</p>
           )}
 
           {/* Purpose */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Purpose
+            <label className={`block text-sm font-medium text-gray-700 mb-1 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
+              {t('editBookingScreen.purposeLabel')}
             </label>
             <textarea
               value={formData.purpose}
               onChange={(e) => setFormData({ ...formData, purpose: e.target.value })}
-              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-black focus:border-black"
+              className={`w-full p-2 border border-gray-300 rounded-lg focus:ring-black focus:border-black ${i18n.language === 'lo' ? 'font-lao' : ''}`}
               rows={3}
-              placeholder="Briefly describe the purpose of your booking..."
+              placeholder={t('editBookingScreen.purposePlaceholder')}
               required
             />
           </div>
 
           {/* Number of Attendees */}
           <div>
-            <label htmlFor="numberOfAttendees" className="block text-sm font-medium text-gray-700 mb-1">
-              Number of Attendees
+            <label htmlFor="numberOfAttendees" className={`block text-sm font-medium text-gray-700 mb-1 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
+              {t('editBookingScreen.attendeesLabel')}
             </label>
             <div className="relative">
               <input
@@ -417,41 +429,41 @@ const EditBookingScreen = () => {
                 value={formData.numberOfAttendees}
                 onChange={(e) => setFormData({ ...formData, numberOfAttendees: parseInt(e.target.value) || 0 })}
                 min="0"
-                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-black focus:border-black"
-                placeholder="e.g., 10"
+                className={`w-full p-2 border border-gray-300 rounded-lg focus:ring-black focus:border-black ${i18n.language === 'lo' ? 'font-lao' : ''}`}
+                placeholder={t('editBookingScreen.attendeesPlaceholder')}
               />
               <Users className="absolute right-3 top-3 text-gray-400 pointer-events-none" />
             </div>
             {formData.numberOfAttendees > (room?.capacity || Infinity) && (
-                <p className="text-red-500 text-sm mt-1">
-                    Number of attendees ({formData.numberOfAttendees}) exceeds room capacity ({room?.capacity || 'N/A'}).
+                <p className={`text-red-500 text-sm mt-1 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
+                  {t('editBookingScreen.exceedsCapacity', { count: formData.numberOfAttendees, capacity: room?.capacity || 'N/A' })}
                 </p>
             )}
             {formData.numberOfAttendees < 0 && (
-                <p className="text-red-500 text-sm mt-1">
-                    Number of attendees cannot be negative.
+                <p className={`text-red-500 text-sm mt-1 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
+                  {t('editBookingScreen.negativeAttendees')}
                 </p>
             )}
           </div>
 
           {/* Equipment Selection */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Request Equipment (Optional)
+            <label className={`block text-sm font-medium text-gray-700 mb-2 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
+              {t('editBookingScreen.requestEquipmentTitle')}
             </label>
             {room.equipment?.length > 0 ? (
               <div className="space-y-3">
                 {room.equipment.map((item) => {
-                  const name = item.equipment?.name || item.name || 'Unknown';
+                  const name = item.equipment?.name || item.name || t('editBookingScreen.unknownEquipment');
                   const totalAvailableQuantity = item.quantity || 1;
                   const selectedEquip = formData.requestedEquipment.find(e => e.name === name);
                   const isSelected = !!selectedEquip;
-                  const requestedQuantity = selectedEquip ? selectedEquip.requestedQuantity : 1;
+                  const requestedQuantity = selectedEquip?.requestedQuantity || 1;
 
                   return (
                     <div key={name} className="border border-gray-300 rounded-lg p-4 bg-white">
                       {/* Equipment Header */}
-                      <div className="flex items-center justify-between mb-2">
+                      <div className={`flex items-center justify-between mb-2 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
                         <div
                           onClick={() => handleEquipmentChange(item, 'toggle')}
                           className="flex items-center space-x-2 cursor-pointer hover:text-black transition-colors"
@@ -466,14 +478,14 @@ const EditBookingScreen = () => {
                           <span className="font-medium text-gray-900">{name}</span>
                         </div>
                         <span className="text-sm text-gray-500">
-                          {totalAvailableQuantity} available
+                          {t('editBookingScreen.equipmentAvailable', { count: totalAvailableQuantity })}
                         </span>
                       </div>
 
                       {/* Quantity Selector (shown when selected) */}
                       {isSelected && (
-                        <div className="mt-2 flex items-center space-x-3">
-                          <label className="text-sm text-gray-600">Quantity needed:</label>
+                        <div className={`mt-2 flex items-center space-x-3 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
+                          <label className="text-sm text-gray-600">{t('editBookingScreen.quantityNeeded')}</label>
                           <div className="flex items-center space-x-2">
                             <button
                               type="button"
@@ -512,7 +524,7 @@ const EditBookingScreen = () => {
                 })}
               </div>
             ) : (
-              <p className="text-sm text-gray-500">No equipment available for this room.</p>
+              <p className={`text-sm text-gray-500 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>{t('editBookingScreen.noEquipmentAvailable')}</p>
             )}
           </div>
 
@@ -521,17 +533,17 @@ const EditBookingScreen = () => {
             type="submit"
             disabled={isSubmitting}
             className={`w-full py-3 px-4 rounded-lg font-semibold text-white transition-colors flex items-center justify-center
-              ${isSubmitting ? 'bg-gray-400 cursor-not-allowed' : 'bg-black hover:bg-gray-800'}`}
+              ${isSubmitting ? 'bg-gray-400 cursor-not-allowed' : 'bg-black hover:bg-gray-800'} ${i18n.language === 'lo' ? 'font-lao' : ''}`}
           >
             {isSubmitting ? (
               <>
                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
-                Updating Booking...
+                {t('editBookingScreen.updateBookingLoading')}
               </>
             ) : (
               <>
                 <Edit className="w-5 h-5 mr-2" />
-                Update Booking
+                {t('editBookingScreen.updateBookingButton')}
               </>
             )}
           </button>

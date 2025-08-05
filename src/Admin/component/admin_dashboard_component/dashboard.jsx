@@ -39,12 +39,12 @@ const Dashboard = ({ rooms, upcomingMeetings, getStatusColor, getStatusIcon ,nav
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <div className={`bg-white rounded-xl shadow-sm border border-gray-100 p-6 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
             <div className="flex items-center justify-between mb-6">
-              <h3 className={`text-lg font-semibold text-gray-900 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>{t('dashboardScreen.roomStatus')}</h3>
+              <h3 className="text-lg font-semibold text-gray-900">{t('dashboardScreen.roomStatus')}</h3>
               <button
                 onClick={() => navigate('/rooms/add')}
-                className={`bg-blue-600 text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-blue-700 transition-colors flex items-center space-x-2 ${i18n.language === 'lo' ? 'font-lao' : ''}`}
+                className="bg-blue-600 text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-blue-700 transition-colors flex items-center space-x-2"
               >
                 <Plus className="w-4 h-4" />
                 <span>{t('dashboardScreen.addNewRoom')}</span>

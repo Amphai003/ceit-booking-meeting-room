@@ -742,7 +742,7 @@ const UserManagement = () => {
         )}
 
         {/* Pagination */}
-        {pagination && filteredUsers.length > 0 && (
+        {/* {pagination && filteredUsers.length > 0 && (
           <div className="flex justify-between items-center mt-6">
             <button
               onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
@@ -762,7 +762,7 @@ const UserManagement = () => {
               Next
             </button>
           </div>
-        )}
+        )} */}
       </div>
     </div>
   );

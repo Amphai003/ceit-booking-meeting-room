@@ -2,6 +2,7 @@ import React from 'react';
 import { Edit2, Trash2, Users, Search, Filter, AlertCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
+// This is the parent component that displays the list of RoomCards
 const RoomList = ({
   rooms,
   loading,
@@ -112,14 +113,14 @@ const RoomList = ({
   );
 };
 
+// The following is the updated RoomCard component that now correctly translates the status
 const RoomCard = ({ room, statusColors, handleEdit, handleDelete }) => {
   const { t, i18n } = useTranslation();
 
-  // Safely access roomType.typeName or fallback to the ID if not populated, or a default string
   const roomTypeName = room.roomType?.typeName || room.roomType || t('roomList.unknownRoomType');
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
+    <div className={`bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
       {room.photo && (
         <div className="h-48 bg-gray-200 overflow-hidden">
           <img
@@ -127,9 +128,7 @@ const RoomCard = ({ room, statusColors, handleEdit, handleDelete }) => {
             alt={room.name}
             className="w-full h-full object-cover"
             onError={(e) => {
-              e.target.style.display = 'none'; // Hide broken image icon
-              // Optionally display a fallback icon or text
-              // e.target.closest('div').innerHTML = `<div class="w-full h-full flex items-center justify-center text-gray-400"><ImageIcon size={48} /></div>`;
+              e.target.style.display = 'none';
             }}
           />
         </div>
@@ -137,11 +136,11 @@ const RoomCard = ({ room, statusColors, handleEdit, handleDelete }) => {
       <div className="p-6">
         <div className="flex items-start justify-between mb-4">
           <div>
-            <h3 className={`text-xl font-semibold text-gray-900 mb-1 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>{room.name}</h3>
-            {/* Use the safely accessed roomTypeName here */}
-            <p className={`text-sm text-gray-500 mb-2 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>{roomTypeName}</p>
-            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${statusColors[room.status]} ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
-              {room.status?.charAt(0).toUpperCase() + room.status?.slice(1)}
+            <h3 className="text-xl font-semibold text-gray-900 mb-1">{room.name}</h3>
+            <p className="text-sm text-gray-500 mb-2">{roomTypeName}</p>
+            {/* CORRECTED: Use the t() function for status translation */}
+            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${statusColors[room.status]}`}>
+              {t(`roomList.${room.status}`)}
             </span>
           </div>
           <div className="flex gap-2">
@@ -161,24 +160,23 @@ const RoomCard = ({ room, statusColors, handleEdit, handleDelete }) => {
         </div>
 
         <div className="space-y-3 mb-4">
-          <div className={`flex items-center gap-2 text-gray-600 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
+          <div className="flex items-center gap-2 text-gray-600">
             <Users size={16} />
             <span>{t('roomList.capacity', { capacity: room.capacity })}</span>
           </div>
-          <div className={`text-gray-600 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
+          <div className="text-gray-600">
             <span>{t('roomList.location', { location: room.location })}</span>
           </div>
         </div>
 
         {room.note && (
-          <p className={`text-gray-600 text-sm mb-4 line-clamp-2 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>{room.note}</p>
+          <p className="text-gray-600 text-sm mb-4 line-clamp-2">{room.note}</p>
         )}
 
-        <div className={`text-gray-600 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
+        <div className="text-gray-600">
           <span>{t('roomList.equipment')} </span>
           {room.equipment?.length > 0 ? (
             room.equipment.map((item, index) => {
-              // Ensure item.equipment is an object with a 'name' property
               const name = item.equipment?.name || t('roomList.unknownEquipment');
               return (
                 <span key={`eq-${index}`} className={i18n.language === 'lo' ? 'font-lao' : ''}>

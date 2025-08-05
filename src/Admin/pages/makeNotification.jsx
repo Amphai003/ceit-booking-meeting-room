@@ -247,9 +247,9 @@ const NotificationScreen = () => {
   // Update targetOptions to use translation
   const translatedTargetOptions = [
     { value: 'all', label: t('notificationScreen.allUsers') },
-    { value: 'active', label: t('notificationScreen.activeUsers') },
-    { value: 'inactive', label: t('notificationScreen.inactiveUsers') },
-    { value: 'premium', label: t('notificationScreen.premiumUsers') },
+    // { value: 'active', label: t('notificationScreen.activeUsers') },
+    // { value: 'inactive', label: t('notificationScreen.inactiveUsers') },
+    // { value: 'premium', label: t('notificationScreen.premiumUsers') },
     { value: 'specific', label: t('notificationScreen.specificUsers') }
   ];
 

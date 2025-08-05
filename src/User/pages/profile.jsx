@@ -244,7 +244,7 @@ const ProfileScreen = () => {
 
   const buttons = [
     { icon: Edit, label: t('profileScreen.editProfileButton'), onClick: handleEditProfile, color: 'bg-blue-600 hover:bg-blue-700', isLogout: false },
-    { icon: Shield, label: t('profileScreen.privacyPolicyButton'), onClick: handlePrivacyPolicy, color: 'bg-blue-600 hover:bg-blue-700', isLogout: false },
+    // { icon: Shield, label: t('profileScreen.privacyPolicyButton'), onClick: handlePrivacyPolicy, color: 'bg-blue-600 hover:bg-blue-700', isLogout: false },
     // { icon: FileText, label: t('profileScreen.termsConditionsButton'), onClick: handleTermsConditions, color: 'bg-blue-600 hover:bg-blue-700', isLogout: false },
     // { icon: Globe, label: t('profileScreen.changeLanguageButton'), onClick: handleChangeLanguage, color: 'bg-blue-600 hover:bg-blue-700', isLogout: false },
     { icon: Lock, label: t('profileScreen.changePasswordButton'), onClick: handleChangePassword, color: 'bg-blue-600 hover:bg-blue-700', isLogout: false },
