@@ -498,13 +498,15 @@ const UserManagement = () => {
                           </td>
                           <td className="px-6 py-4">
                             <span className={`${getRoleBadge(user.role)} ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
-                              {user.role}
+                              {t(`roles.${user.role}`)}
                             </span>
+                        
                           </td>
                           <td className="px-6 py-4">
                             <span className={`${getStatusBadge(user.accessStatus)} ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
-                              {user.accessStatus}
+                              {t(`accessStatus.${user.accessStatus}`)}
                             </span>
+                           
                           </td>
                           <td className={`px-6 py-4 text-sm text-gray-500 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
                             {formatDate(user.createdAt)}

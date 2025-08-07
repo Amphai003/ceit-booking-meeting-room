@@ -16,7 +16,8 @@ const SignUp = () => {
         confirmPassword: '',
         firstName: '',
         lastName: '',
-        department: ''
+        department: '',
+        requestReason: '' // Added new field
     });
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -35,7 +36,7 @@ const SignUp = () => {
     };
 
     const validateForm = () => {
-        if (!formData.email || !formData.password || !formData.firstName || !formData.lastName || !formData.department) {
+        if (!formData.email || !formData.password || !formData.firstName || !formData.lastName || !formData.department || !formData.requestReason) { // Added requestReason validation
             setError(t('signUp.allFieldsRequired'));
             return false;
         }
@@ -64,7 +65,8 @@ const SignUp = () => {
                 password: formData.password,
                 firstName: formData.firstName,
                 lastName: formData.lastName,
-                department: formData.department
+                department: formData.department,
+                requestReason: formData.requestReason // Included new field in request
             };
 
             const response = await api.post('/auth/register', requestData);
@@ -131,7 +133,7 @@ const SignUp = () => {
         <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center p-4 sm:p-6 lg:p-8">
             <div className="w-full max-w-sm sm:max-w-md lg:max-w-lg">
                 <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl sm:shadow-2xl p-6 sm:p-8 lg:p-10">
-                                       {/* Logo Section */}
+                    {/* Logo Section */}
                     <div className="text-center mb-6 sm:mb-8">
                         <div className="flex justify-center mb-4 sm:mb-6">
                             <img src={ceitLogo} alt="Meeting Room Booking" className="h-12 sm:h-16 lg:h-20 w-auto" />
@@ -212,6 +214,23 @@ const SignUp = () => {
                                     <option value="student" className={i18n.language === 'lo' ? 'font-lao' : ''}>{t('signUp.studentOption')}</option>
                                     <option value="staff" className={i18n.language === 'lo' ? 'font-lao' : ''}>{t('signUp.staffOption')}</option>
                                 </select>
+                            </div>
+
+                            {/* Request Reason Input */}
+                            <div>
+                                <label htmlFor="requestReason" className="sr-only">
+                                    {t('signUp.requestReasonPlaceholder')}
+                                </label>
+                                <textarea
+                                    id="requestReason"
+                                    name="requestReason"
+                                    placeholder={t('signUp.requestReasonPlaceholder')}
+                                    value={formData.requestReason}
+                                    onChange={handleInputChange}
+                                    rows="3" // Adjust rows as needed
+                                    className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 lg:py-4 bg-blue-50 border-0 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white transition-all duration-300 text-sm sm:text-base placeholder-gray-500 resize-y ${i18n.language === 'lo' ? 'font-lao' : ''}`}
+                                    required
+                                ></textarea>
                             </div>
 
                             {/* Email Input */}

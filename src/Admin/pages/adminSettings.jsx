@@ -1,11 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { User, Edit, Shield, FileText, Globe, Lock, LogOut, ArrowLeft, Camera, Loader, Save } from 'lucide-react'; // Added Save import
+import { User, Edit, Shield, FileText, Globe, Lock, LogOut, ArrowLeft, Camera, Loader, Save } from 'lucide-react';
 import Swal from 'sweetalert2';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api'; // Assuming 'api' is configured for your backend calls
+import { useTranslation } from 'react-i18next'; // Import useTranslation
 
 // AdminSettings Component
 const AdminSettings = () => {
+  const { t, i18n } = useTranslation(); // Initialize useTranslation
+
   const [user, setUser] = useState({
     firstName: '',
     lastName: '',
@@ -61,8 +64,8 @@ const AdminSettings = () => {
         } else {
           // Generic error for other fetch failures
           Swal.fire({
-            title: 'Error',
-            text: 'Failed to load profile data. Please try again.',
+            title: t('settings.errorTitle'),
+            text: t('settings.loadProfileError'),
             icon: 'error',
             confirmButtonColor: '#3b82f6', // Keep this blue for SweetAlert
             customClass: {
@@ -77,7 +80,7 @@ const AdminSettings = () => {
     };
 
     fetchUserData();
-  }, [navigate]); // Depend on navigate to avoid lint warnings
+  }, [navigate, t]); // Depend on navigate and t
 
   // Trigger file input click
   const handleAvatarClick = () => {
@@ -92,8 +95,8 @@ const AdminSettings = () => {
     // Basic client-side file validation
     if (!file.type.match('image.*')) {
       Swal.fire({
-        title: 'Invalid File',
-        text: 'Please select an image file (e.g., JPEG, PNG, GIF).',
+        title: t('settings.invalidFileTitle'),
+        text: t('settings.invalidFileText'),
         icon: 'error',
         confirmButtonColor: '#3b82f6',
         customClass: {
@@ -106,8 +109,8 @@ const AdminSettings = () => {
 
     if (file.size > 5 * 1024 * 1024) { // 5MB limit
       Swal.fire({
-        title: 'File Too Large',
-        text: 'Please select an image smaller than 5MB.',
+        title: t('settings.fileTooLargeTitle'),
+        text: t('settings.fileTooLargeText'),
         icon: 'error',
         confirmButtonColor: '#3b82f6',
         customClass: {
@@ -141,7 +144,7 @@ const AdminSettings = () => {
                          uploadResponse.data; // Fallback to direct data if it's just the URL
 
       if (!imageUrl || typeof imageUrl !== 'string') {
-        throw new Error('Upload successful but no valid image URL was returned.');
+        throw new Error(t('settings.uploadNoUrlError'));
       }
 
       // Step 2: Update the user's profile with the new photo URL
@@ -161,8 +164,8 @@ const AdminSettings = () => {
       }));
 
       Swal.fire({
-        title: 'Success!',
-        text: 'Profile picture updated successfully.',
+        title: t('settings.successTitle'),
+        text: t('settings.profilePicUpdateSuccess'),
         icon: 'success',
         confirmButtonColor: '#3b82f6',
         customClass: {
@@ -173,8 +176,8 @@ const AdminSettings = () => {
     } catch (error) {
       console.error('Upload or update error:', error);
       Swal.fire({
-        title: 'Upload Failed',
-        text: error.response?.data?.message || 'Failed to update profile picture. Please try again.',
+        title: t('settings.uploadFailedTitle'),
+        text: error.response?.data?.message || t('settings.profilePicUpdateError'),
         icon: 'error',
         confirmButtonColor: '#3b82f6',
         customClass: {
@@ -190,20 +193,18 @@ const AdminSettings = () => {
   // Navigation handlers
   const handleEditProfile = () => navigate('/admin-edit-profile');
   const handlePrivacyPolicy = () => navigate('/privacy-policy');
-  // const handleTermsConditions = () => navigate('/term-condition'); // Commented out
-  // const handleChangeLanguage = () => navigate('/change-language'); // Commented out
   const handleChangePassword = () => navigate('/change-password');
 
   const handleLogout = () => {
     Swal.fire({
-      title: 'Are you sure?',
-      text: "You will be logged out of your account.",
+      title: t('settings.logoutConfirmTitle'),
+      text: t('settings.logoutConfirmText'),
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#ef4444', // Red for destructive action
       cancelButtonColor: '#6b7280', // Gray for cancel
-      confirmButtonText: 'Yes, Logout',
-      cancelButtonText: 'Cancel',
+      confirmButtonText: t('settings.logoutConfirmButton'),
+      cancelButtonText: t('settings.logoutCancelButton'),
       reverseButtons: true, // Puts confirm on the right
       customClass: {
         popup: 'rounded-2xl',
@@ -229,7 +230,7 @@ const AdminSettings = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center p-6 bg-white rounded-xl shadow-md">
           <div className="w-10 h-10 border-4 border-gray-200 border-t-blue-500 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600 font-medium">Loading profile data...</p>
+          <p className={`text-gray-600 font-medium ${i18n.language === 'lo' ? 'font-lao' : ''}`}>{t('settings.loadingProfile')}</p>
         </div>
       </div>
     );
@@ -237,74 +238,62 @@ const AdminSettings = () => {
 
   // Helper to get full name, fallback to 'User'
   const getFullName = () => {
-    return `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User';
+    return `${user.firstName || ''} ${user.lastName || ''}`.trim() || t('settings.defaultUser');
   };
 
   // Define setting options with icons and actions
   const settingOptions = [
     { 
       icon: Edit, 
-      label: 'Edit Profile', 
+      label: t('settings.editProfile'), 
       onClick: handleEditProfile, 
-      color: 'bg-blue-500 hover:bg-blue-600' // Lighter blue
+      color: 'bg-blue-500 hover:bg-blue-600'
     },
-    // { // Commented out as requested
-    //   icon: Globe, 
-    //   label: 'Change Language', 
-    //   onClick: handleChangeLanguage, 
-    //   color: 'bg-blue-500 hover:bg-blue-600' 
-    // },
     { 
       icon: Lock, 
-      label: 'Change Password', 
+      label: t('settings.changePassword'), 
       onClick: handleChangePassword, 
       color: 'bg-blue-500 hover:bg-blue-600' 
     },
-    { 
-      icon: Shield, 
-      label: 'Privacy Policy', 
-      onClick: handlePrivacyPolicy, 
-      color: 'bg-blue-500 hover:bg-blue-600' 
-    },
-    // { // Commented out as requested
-    //   icon: FileText, 
-    //   label: 'Terms & Conditions', 
-    //   onClick: handleTermsConditions, 
+    // { 
+    //   icon: Shield, 
+    //   label: t('settings.privacyPolicy'), 
+    //   onClick: handlePrivacyPolicy, 
     //   color: 'bg-blue-500 hover:bg-blue-600' 
     // },
     { 
       icon: LogOut, 
-      label: 'Logout', 
+      label: t('settings.logout'), 
       onClick: handleLogout, 
-      color: 'bg-red-500 hover:bg-red-600' // Stays red for importance
+      color: 'bg-red-500 hover:bg-red-600' 
     }
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 font-sans antialiased">
+    <div className={`min-h-screen bg-gray-50 font-sans antialiased ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
       {/* Fixed Header with Back Button */}
-      <div className="fixed top-0 left-0 right-0 bg-white text-gray-900 z-20 shadow-md"> {/* Changed to white background, dark text */}
-        <div className="px-4 py-4 flex items-center max-w-2xl mx-auto"> {/* Centered header content */}
+      <div className="fixed top-0 left-0 right-0 bg-white text-gray-900 z-20 shadow-md">
+        <div className="px-4 py-4 flex items-center max-w-2xl mx-auto">
           <button 
             onClick={handleNavigateBack}
             className="mr-4 p-2 rounded-full hover:bg-gray-100 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-300"
             aria-label="Go back"
           >
-            <ArrowLeft className="w-6 h-6 text-gray-700" /> {/* Darker icon */}
+            <ArrowLeft className="w-6 h-6 text-gray-700" />
           </button>
-          <h1 className="text-xl sm:text-2xl font-bold flex-grow text-center pr-10">Admin Settings</h1> {/* Increased pr for centering */}
+          <h1 className={`text-xl sm:text-2xl font-bold flex-grow text-center pr-10 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>{t('settings.adminSettingsTitle')}</h1>
         </div>
       </div>
 
       {/* Main Content Area - Padding to account for fixed header */}
-      <div className="pt-24 pb-8 px-4 sm:px-6 lg:px-8"> {/* Increased pt, added horizontal padding */}
-        <div className="max-w-md mx-auto w-full"> {/* Ensures content is centered and max-width */}
+      <div className="pt-24 pb-8 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-md mx-auto w-full">
           {/* Profile Card */}
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 mb-6"> {/* Softened border, increased shadow */}
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 mb-6">
             {/* Avatar Section */}
             <div className="flex flex-col items-center mb-6">
-              <div className="relative group"> {/* Added group for hover effect */}
-                <div className="w-28 h-28 bg-gradient-to-br from-blue-400 to-blue-500 rounded-full flex items-center justify-center mb-4 shadow-xl overflow-hidden border-4 border-white transition-all duration-300 group-hover:scale-105"> {/* Softened gradient, larger avatar, strong shadow, border */}
+              <div className="relative group">
+                <div className="w-28 h-28 bg-gradient-to-br from-blue-400 to-blue-500 rounded-full flex items-center justify-center mb-4 shadow-xl overflow-hidden border-4 border-white transition-all duration-300 group-hover:scale-105">
                   {user.photo ? (
                     <img 
                       src={user.photo} 
@@ -319,7 +308,6 @@ const AdminSettings = () => {
                   ) : (
                     <User className="w-14 h-14 text-white fallback-icon" />
                   )}
-                  {/* Fallback icon container (initially hidden if photo exists) */}
                   {user.photo && ( // Only render if photo exists to handle initial state
                     <User className="w-14 h-14 text-white fallback-icon" style={{ display: 'none' }} />
                   )}
@@ -346,32 +334,32 @@ const AdminSettings = () => {
               </div>
 
               {/* User Info */}
-              <h2 className="text-3xl font-extrabold text-gray-900 mt-2 mb-1">{getFullName()}</h2>
-              <p className="text-gray-600 text-lg mb-2">{user.email}</p>
+              <h2 className={`text-3xl font-extrabold text-gray-900 mt-2 mb-1 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>{getFullName()}</h2>
+              <p className={`text-gray-600 text-lg mb-2 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>{user.email}</p>
               {user.phoneNumber && (
-                <p className="text-gray-600 text-base mb-2">Phone: {user.phoneNumber}</p>
+                <p className={`text-gray-600 text-base mb-2 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>{t('settings.phone')}: {user.phoneNumber}</p>
               )}
               {user.department && (
-                <p className="text-gray-700 text-center text-sm leading-relaxed px-4">Department: {user.department}</p>
+                <p className={`text-gray-700 text-center text-sm leading-relaxed px-4 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>{t('settings.department')}: {user.department}</p>
               )}
               {user.role === 'admin' && (
-                <span className="mt-3 inline-flex items-center px-4 py-1.5 rounded-full text-sm font-semibold bg-blue-100 text-blue-800 shadow-sm">
-                  <Shield className="w-4 h-4 mr-2" /> Administrator
+                <span className={`mt-3 inline-flex items-center px-4 py-1.5 rounded-full text-sm font-semibold bg-blue-100 text-blue-800 shadow-sm ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
+                  <Shield className="w-4 h-4 mr-2" /> {t('settings.administrator')}
                 </span>
               )}
             </div>
           </div>
 
           {/* Action Buttons */}
-          <div className="space-y-4"> {/* Increased space-y */}
+          <div className="space-y-4">
             {settingOptions.map((option, index) => (
               <button
                 key={index}
                 onClick={option.onClick}
                 className={`w-full ${option.color} text-white rounded-xl py-4 px-6 flex items-center space-x-4 text-lg font-medium transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-300`} 
               >
-                <option.icon className="w-6 h-6 flex-shrink-0" /> {/* Larger icons */}
-                <span className="flex-grow text-left">{option.label}</span> {/* Ensures text aligns left */}
+                <option.icon className="w-6 h-6 flex-shrink-0" />
+                <span className={`flex-grow text-left ${i18n.language === 'lo' ? 'font-lao' : ''}`}>{option.label}</span>
               </button>
             ))}
           </div>
@@ -380,6 +368,5 @@ const AdminSettings = () => {
     </div>
   );
 };
-
 
 export default AdminSettings;

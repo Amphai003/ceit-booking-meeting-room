@@ -32,6 +32,7 @@
     "passwordPlaceholder": "Password",
     "confirmPasswordPlaceholder": "Confirm Password",
     "signUpButton": "Sign Up",
+    "requestReasonPlaceholder":"please write a reason why you wanna use an application for ",
     "creatingAccountButton": "Creating Account...",
     "alreadyHaveAccount": "Already have an account?",
     "backToLogin": "Back to Login",
@@ -240,6 +241,31 @@
     "saveFailedTitle": "Save Failed",
     "saveFailedText": "Failed to update profile"
   },
+  "calendar": {
+      "fetchError": "Failed to load bookings for this date.",
+      "roomOccupied": "Room Occupied",
+      "bookedBy": "This time slot is booked by",
+      "purpose": "Purpose",
+      "time": "Time",
+      "status": "Status",
+      "status_pending": "PENDING",
+      "status_approved": "APPROVED",
+      "status_rejected": "REJECTED",
+      "status_cancelled": "CANCELLED",
+      "status_history": "HISTORY",
+      "gotIt": "Got It",
+      "slotUnavailable": "Time Slot Unavailable",
+      "pastTimeMessage": "This time slot is in the past or too close to the current time to be booked.",
+      "availabilityFor": "Availability for",
+      "selectDate": "Select Date",
+      "loadingCalendar": "Loading calendar...",
+      "legend": {
+        "available": "Available",
+        "approved": "Approved",
+        "pending": "Pending",
+        "occupiedUnavailable": "Occupied/Unavailable"
+      }
+  },  
   "bookingScreen": {
     "loadingBookings": "Loading bookings...",
     "myBookingsHeader": "My Bookings",
@@ -319,6 +345,7 @@
     "statusLabel": "Status:",
     "approved": "Approved",
     "pending": "Pending",
+    "rejected": "Rejected",
     "markAllAsReadConfirmationTitle": "Mark all as read?",
     "markAllAsReadConfirmationText": "This will mark all notifications as read",
     "yesMarkAll": "Yes, mark all",
@@ -364,6 +391,54 @@
     "maintenance": "Maintenance",
     "roomStatus": "Room Status",
     "addNewRoom": "Add New Room"
+  },
+  "settings": {
+    "adminSettingsTitle": "Admin Settings",
+    "loadingProfile": "Loading profile data...",
+    "defaultUser": "User",
+    "phone": "Phone",
+    "department": "Department",
+    "administrator": "Administrator",
+    "editProfile": "Edit Profile",
+    "changePassword": "Change Password",
+    "privacyPolicy": "Privacy Policy",
+    "logout": "Logout",
+    "logoutConfirmTitle": "Are you sure?",
+    "logoutConfirmText": "You will be logged out of your account.",
+    "logoutConfirmButton": "Yes, Logout",
+    "logoutCancelButton": "Cancel",
+    "invalidFileTitle": "Invalid File",
+    "invalidFileText": "Please select an image file (e.g., JPEG, PNG, GIF).",
+    "fileTooLargeTitle": "File Too Large",
+    "fileTooLargeText": "Please select an image smaller than 5MB.",
+    "uploadNoUrlError": "Upload successful but no valid image URL was returned.",
+    "successTitle": "Success!",
+    "profilePicUpdateSuccess": "Profile picture updated successfully.",
+    "uploadFailedTitle": "Upload Failed",
+    "profilePicUpdateError": "Failed to update profile picture. Please try again.",
+    "errorTitle": "Error",
+    "loadProfileError": "Failed to load profile data. Please try again."
+  },
+  "editProfilePage": {
+    "title": "Edit Profile",
+    "loadingProfile": "Loading profile data...",
+    "firstNameLabel": "First Name",
+    "firstNamePlaceholder": "Enter your first name",
+    "lastNameLabel": "Last Name",
+    "lastNamePlaceholder": "Enter your last name",
+    "emailLabel": "Email Address",
+    "phoneNumberLabel": "Phone Number",
+    "phoneNumberPlaceholder": "Enter your phone number",
+    "departmentLabel": "Department",
+    "departmentPlaceholder": "Enter your department",
+    "saving": "Saving...",
+    "saveChanges": "Save Changes",
+    "errorTitle": "Error",
+    "loadError": "Failed to load profile data for editing. Please try again.",
+    "successTitle": "Success!",
+    "updateSuccess": "Profile updated successfully.",
+    "saveFailedTitle": "Save Failed",
+    "updateFailed": "Failed to update profile. Please try again."
   },
   "sidebar": {
     "roomAdmin": "RoomAdmin",
@@ -650,6 +725,7 @@
     "loadingBookings": "Loading bookings...",
     "errorTitle": "Error",
     "history":"History",
+    "deleted":"Deleted",
     "failedToFetchBookings": "Failed to fetch bookings. Please try again.",
     "bookingManagement": "Booking Management",
     "manageReservations": "Manage room bookings and reservations",
@@ -751,6 +827,59 @@
     "requestedEquipment": "Requested Equipment",
     "equipmentNotes": "Equipment Notes",
     "invalidDateTime": "Invalid Date/Time"
+  },
+
+  "title": "Change Password",
+  "updatePassword": "Update Password",
+  "passwordGuidelines": "Create a strong password to keep your account secure. Your password should be unique and not used elsewhere.",
+  "currentPassword": "Current Password",
+  "newPassword": "New Password",
+  "confirmPassword": "Confirm New Password",
+  "placeholders": {
+    "currentPassword": "Enter your current password",
+    "newPassword": "Enter your new password",
+    "confirmPassword": "Confirm your new password"
+  },
+  "passwordStrength": {
+    "title": "Password Strength",
+    "weak": "Weak",
+    "medium": "Medium",
+    "strong": "Strong"
+  },
+  "passwordRequirements": "Password Requirements",
+  "requirements": {
+    "length": "At least 8 characters",
+    "uppercase": "One uppercase letter",
+    "lowercase": "One lowercase letter",
+    "number": "One number",
+    "special": "One special character"
+  },
+  "securityTips": {
+    "title": "Security Tips",
+    "uniquePassword": "Use a unique password that you don't use elsewhere",
+    "passwordManager": "Consider using a password manager",
+    "personalInfo": "Avoid using personal information in passwords"
+  },
+  "changePasswordButton": "Change Password",
+  "changingPassword": "Changing Password...",
+  "validation": {
+    "missingInfo": "Missing Information",
+    "enterCurrentPassword": "Please enter your current password",
+    "enterNewPassword": "Please enter a new password",
+    "weakPassword": "Weak Password",
+    "strongPasswordRequired": "Please choose a stronger password that meets all requirements",
+    "passwordMismatch": "Password Mismatch",
+    "passwordsDontMatch": "New password and confirmation password do not match",
+    "samePassword": "Same Password",
+    "newPasswordDifferent": "New password must be different from your current password"
+  },
+  "success": {
+    "title": "Success!",
+    "passwordChanged": "Your password has been changed successfully"
+  },
+  "error": {
+    "changeFailed": "Change Failed",
+    "checkCurrentPassword": "Failed to change password. Please check your current password."
   }
 
 }

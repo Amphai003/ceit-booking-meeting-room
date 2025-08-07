@@ -27,6 +27,7 @@
     "departmentPlaceholder": "ເລືອກພະແນກ",
     "teacherOption": "ອາຈານ",
     "studentOption": "ນັກຮຽນ",
+    "requestReasonPlaceholder": "ກະລຸນາຂຽນເຫດຜົນວ່າເປັນຫຍັງທ່ານຈຶ່ງຕ້ອງການໃຊ້ແອັບພິເຄຊັນ",
     "staffOption": "ພະນັກງານ",
     "emailPlaceholder": "ອີເມວ",
     "passwordPlaceholder": "ລະຫັດຜ່ານ",
@@ -139,12 +140,11 @@
     "bookNowButton": "ຈອງດຽວນີ້",
     "typeLabel": "ປະເພດ:",
     "unknownEquipment": "ອຸປະກອນບໍ່ຮູ້ຈັກ",
-      "capacity": "ຄວາມສາມາດບັນຈຸ: {{capacity}} ຄົນ",
+    "capacity": "ຄວາມສາມາດບັນຈຸ: {{capacity}} ຄົນ",
     "equipment": "ອຸປະກອນ:",
     "note": "ໝາຍເຫດ: {{note}}",
     "viewDetails": "ເບິ່ງລາຍລະອຽດ",
     "editRoom": "ແກ້ໄຂຫ້ອງ",
-
     "available": "ວ່າງ",
     "occupied": "ບໍ່ວ່າງ",
     "maintenance": "ກຳລັງສ້ອມແປງ",
@@ -169,7 +169,7 @@
     "errorRemovingText": "ບໍ່ສາມາດລຶບຫ້ອງໄດ້. ກະລຸນາລອງໃໝ່."
   },
   "bookingScreen": {
-      "confirmedStatus": "ຢືນຢັນແລ້ວ",
+    "confirmedStatus": "ຢືນຢັນແລ້ວ",
     "approvedStatus": "ອະນຸມັດແລ້ວ",
     "pendingStatus": "ລໍຖ້າການອະນຸມັດ",
     "completedStatus": "ສໍາເລັດແລ້ວ",
@@ -221,7 +221,7 @@
     "startingIn": "ເລີ່ມໃນ {{count}} ນາທີ",
     "roomReadyToBook": "ຫ້ອງພ້ອມໃຫ້ຈອງ",
     "unknown": "ບໍ່ຮູ້ຈັກ"
-   },
+  },
   "notificationsScreen": {
     "headerTitle": "ແຈ້ງເຕືອນ",
     "unreadCountMessage": "ມີ {{count}} ແຈ້ງເຕືອນທີ່ຍັງບໍ່ໄດ້ອ່ານ",
@@ -249,6 +249,7 @@
     "statusLabel": "ສະຖານະ:",
     "approved": "ອະນຸມັດແລ້ວ",
     "pending": "ລໍຖ້າ",
+    "rejected": "ປະຕິເສດແລ້ວ",
     "markAllAsReadConfirmationTitle": "ໝາຍວ່າອ່ານແລ້ວທັງໝົດບໍ?",
     "markAllAsReadConfirmationText": "ນີ້ຈະໝາຍວ່າແຈ້ງເຕືອນທັງໝົດຖືກອ່ານແລ້ວ",
     "yesMarkAll": "ແມ່ນ, ໝາຍທັງໝົດ",
@@ -365,15 +366,87 @@
     "saveFailedTitle": "ບັນທຶກບໍ່ສຳເລັດ",
     "saveFailedText": "ບໍ່ສາມາດອັບເດດໂປຣໄຟລ໌ໄດ້"
   },
-
+  "calendar": {
+    "fetchError": "ບໍ່ສາມາດໂຫລດການຈອງສໍາລັບວັນນີ້ໄດ້.",
+    "roomOccupied": "ຫ້ອງໄດ້ຮັບການຈອງແລ້ວ",
+    "bookedBy": "ເວລານີ້ໄດ້ຖືກຈອງໂດຍ",
+    "purpose": "ຈຸດປະສົງ",
+    "time": "ເວລາ",
+    "status": "ສະຖານະ",
+    "status_pending": "ລໍຖ້າ",
+    "status_approved": "ອະນຸມັດ",
+    "status_rejected": "ປະຕິເສດ",
+    "status_cancelled": "ຍົກເລີກ",
+    "status_history": "ປະຫວັດ",
+    "gotIt": "ເຂົ້າໃຈແລ້ວ",
+    "slotUnavailable": "ເວລານີ້ບໍ່ສາມາດໃຊ້ໄດ້",
+    "pastTimeMessage": "ເວລານີ້ຢູ່ໃນອະດີດ ຫຼື ໃກ້ກັບເວລາປະຈຸບັນເກີນໄປທີ່ຈະສາມາດຈອງໄດ້.",
+    "availabilityFor": "ສະຖານະພາບການໃຊ້ສໍາລັບ",
+    "selectDate": "ເລືອກວັນທີ",
+    "loadingCalendar": "ກໍາລັງໂຫລດປະຕິທິນ...",
+    "legend": {
+      "available": "ສາມາດໃຊ້ໄດ້",
+      "approved": "ອະນຸມັດແລ້ວ",
+      "pending": "ລໍຖ້າການອະນຸມັດ",
+      "occupiedUnavailable": "ຖືກຈອງ/ບໍ່ສາມາດໃຊ້ໄດ້"
+    }
+  },
+  "settings": {
+    "adminSettingsTitle": "ການຕັ້ງຄ່າຜູ້ເບິ່ງແຍງລະບົບ",
+    "loadingProfile": "ກຳລັງໂຫຼດຂໍ້ມູນໂປຣໄຟລ໌...",
+    "defaultUser": "ຜູ້ໃຊ້",
+    "phone": "ເບີໂທລະສັບ",
+    "department": "ພະແນກ",
+    "administrator": "ຜູ້ເບິ່ງແຍງລະບົບ",
+    "editProfile": "ແກ້ໄຂໂປຣໄຟລ໌",
+    "changePassword": "ປ່ຽນລະຫັດຜ່ານ",
+    "privacyPolicy": "ນະໂຍບາຍຄວາມເປັນສ່ວນຕົວ",
+    "logout": "ອອກຈາກລະບົບ",
+    "logoutConfirmTitle": "ທ່ານແນ່ໃຈບໍ່?",
+    "logoutConfirmText": "ທ່ານຈະຖືກອອກຈາກລະບົບຂອງທ່ານ.",
+    "logoutConfirmButton": "ແມ່ນ, ອອກຈາກລະບົບ",
+    "logoutCancelButton": "ຍົກເລີກ",
+    "invalidFileTitle": "ໄຟລ໌ບໍ່ຖືກຕ້ອງ",
+    "invalidFileText": "ກະລຸນາເລືອກໄຟລ໌ຮູບພາບ (ເຊັ່ນ: JPEG, PNG, GIF).",
+    "fileTooLargeTitle": "ໄຟລ໌ໃຫຍ່ເກີນໄປ",
+    "fileTooLargeText": "ກະລຸນາເລືອກຮູບພາບທີ່ນ້ອຍກວ່າ 5MB.",
+    "uploadNoUrlError": "ອັບໂຫຼດສຳເລັດແຕ່ບໍ່ມີ URL ຮູບພາບທີ່ຖືກຕ້ອງສົ່ງຄືນ.",
+    "successTitle": "ສຳເລັດ!",
+    "profilePicUpdateSuccess": "ອັບເດດຮູບໂປຣໄຟລ໌ສຳເລັດແລ້ວ.",
+    "uploadFailedTitle": "ອັບໂຫຼດລົ້ມເຫຼວ",
+    "profilePicUpdateError": "ບໍ່ສາມາດອັບເດດຮູບໂປຣໄຟລ໌ໄດ້. ກະລຸນາລອງໃໝ່ອີກຄັ້ງ.",
+    "errorTitle": "ຂໍ້ຜິດພາດ",
+    "loadProfileError": "ບໍ່ສາມາດໂຫຼດຂໍ້ມູນໂປຣໄຟລ໌ໄດ້. ກະລຸນາລອງໃໝ່ອີກຄັ້ງ."
+  },
+  "editProfilePage": {
+    "title": "ແກ້ໄຂໂປຣໄຟລ໌",
+    "loadingProfile": "ກຳລັງໂຫຼດຂໍ້ມູນໂປຣໄຟລ໌...",
+    "firstNameLabel": "ຊື່",
+    "firstNamePlaceholder": "ປ້ອນຊື່ຂອງທ່ານ",
+    "lastNameLabel": "ນາມສະກຸນ",
+    "lastNamePlaceholder": "ປ້ອນນາມສະກຸນຂອງທ່ານ",
+    "emailLabel": "ທີ່ຢູ່ອີເມວ",
+    "phoneNumberLabel": "ເບີໂທລະສັບ",
+    "phoneNumberPlaceholder": "ປ້ອນເບີໂທລະສັບຂອງທ່ານ",
+    "departmentLabel": "ພະແນກ",
+    "departmentPlaceholder": "ປ້ອນພະແນກຂອງທ່ານ",
+    "saving": "ກຳລັງບັນທຶກ...",
+    "saveChanges": "ບັນທຶກການປ່ຽນແປງ",
+    "errorTitle": "ຂໍ້ຜິດພາດ",
+    "loadError": "ບໍ່ສາມາດໂຫຼດຂໍ້ມູນໂປຣໄຟລ໌ເພື່ອແກ້ໄຂໄດ້. ກະລຸນາລອງໃໝ່ອີກຄັ້ງ.",
+    "successTitle": "ສຳເລັດ!",
+    "updateSuccess": "ອັບເດດໂປຣໄຟລ໌ສຳເລັດແລ້ວ.",
+    "saveFailedTitle": "ບັນທຶກລົ້ມເຫຼວ",
+    "updateFailed": "ບໍ່ສາມາດອັບເດດໂປຣໄຟລ໌ໄດ້. ກະລຸນາລອງໃໝ່ອີກຄັ້ງ."
+  },
   "sidebar": {
-    "roomAdmin": "RoomAdmin",
+    "roomAdmin": "ຜູ້ດູແລ",
     "dashboard": "ໜ້າຫຼັກ",
     "equipment": "ອຸປະກອນ",
     "rooms": "ຫ້ອງ",
     "bookings": "ການຈອງ",
     "users": "ຜູ້ໃຊ້",
-    "advertises": "ໂຄສະນາ",
+    "advertises": "ແຈ້ງເຕືອນ",
     "settings": "ຕັ້ງຄ່າ"
   },
   "makeBookingScreen": {
@@ -442,9 +515,25 @@
     "deletionFailed": "ການລຶບລົ້ມເຫຼວ",
     "couldNotDeleteBooking": "ບໍ່ສາມາດລຶບການຈອງໄດ້"
   },
+  "bookingStatus": {
+  "confirmed": "ຢືນຢັນແລ້ວ",
+  "cancelled": "ຍົກເລີກແລ້ວ",
+  "pending": "ລໍຖ້າ",
+  "rejected": "ຖືກປະຕິເສດ"
+},
+"accessStatus": {
+    "approved": "ອະນຸມັດແລ້ວ",
+    "pending": "ລໍຖ້າ",
+    "rejected": "ຖືກປະຕິເສດ"
+  },
+"roles": {
+    "admin": "ຜູ້ເບິ່ງແຍງລະບົບ",
+    "user": "ຜູ້ໃຊ້"
+  },
   "userManagementScreen": {
     "back": "ກັບຄືນ",
     "userManagement": "ການຈັດການຜູ້ໃຊ້",
+    
     "manageMonitorAccounts": "ຈັດການ ແລະ ຕິດຕາມບັນຊີຜູ້ໃຊ້",
     "totalUsers": "ຜູ້ໃຊ້ທັງໝົດ",
     "approved": "ອະນຸມັດແລ້ວ",
@@ -630,14 +719,10 @@
     "page": "ໜ້າ",
     "of": "ຂອງ",
     "next": "ຕໍ່ໄປ",
-
     "noRoomsFound": "ບໍ່ພົບຫ້ອງໃດ",
-   
     "unknownRoomType": "ປະເພດຫ້ອງບໍ່ຮູ້ຈັກ",
     "unknownEquipment": "ອຸປະກອນບໍ່ຮູ້ຈັກ"
-  
   },
-
   "upcomingMeetings": {
     "title": "ກອງປະຊຸມທີ່ຈະມາເຖິງ",
     "room": "ຫ້ອງ: {{room}}",
@@ -681,13 +766,12 @@
     "failedToLoadUserList": "ບໍ່ສາມາດໂຫຼດລາຍຊື່ຜູ້ໃຊ້ໄດ້",
     "failedToSendNotification": "ບໍ່ສາມາດສົ່ງແຈ້ງເຕືອນໄດ້"
   },
-
-  
   "adminBookingsApp": {
     "loadingBookings": "ກຳລັງໂຫຼດການຈອງ...",
     "errorTitle": "ຂໍ້ຜິດພາດ",
     "attendees": "ຈໍານວນຜູ້ເຂົ້າຮ່ວມ",
-    "history":"ປະຫວັດ",
+    "history": "ປະຫວັດ",
+    "deleted":"ລຶບສຳເລັດ",
     "failedToFetchBookings": "ບໍ່ສາມາດດຶງຂໍ້ມູນການຈອງໄດ້. ກະລຸນາລອງໃໝ່.",
     "bookingManagement": "ການຈັດການການຈອງ",
     "manageReservations": "ຈັດການການຈອງຫ້ອງ ແລະ ການຈອງ",
@@ -697,8 +781,8 @@
     "pending": "ລໍຖ້າ",
     "approved": "ອະນຸມັດແລ້ວ",
     "rejected": "ຖືກປະຕິເສດ",
-    "approve":"ອະນຸມັດ",
-    "reject":"ປະຕິເສດ",
+    "approve": "ອະນຸມັດ",
+    "reject": "ປະຕິເສດ",
     "total": "ທັງໝົດ",
     "waitingForAdmin2Approval": "ລໍຖ້າການອະນຸມັດຈາກຜູ້ເບິ່ງແຍງລະບົບ 2",
     "noBookingsFound": "ບໍ່ພົບການຈອງ",
@@ -753,5 +837,59 @@
     "requestedEquipment": "ອຸປະກອນທີ່ຮ້ອງຂໍ",
     "equipmentNotes": "ໝາຍເຫດອຸປະກອນ",
     "invalidDateTime": "ວັນທີ່/ເວລາບໍ່ຖືກຕ້ອງ"
+  },
+  
+  "title": "ປ່ຽນລະຫັດຜ່ານ",
+  "updatePassword": "ອັບເດດລະຫັດຜ່ານ",
+  "passwordGuidelines": "ສ້າງລະຫັດຜ່ານທີ່ເຂັ້ມແຂງເພື່ອຮັກສາບັນຊີຂອງທ່ານປອດໄພ. ລະຫັດຜ່ານຂອງທ່ານຄວນຈະເປັນເອກະລັກແລະບໍ່ໄດ້ໃຊ້ຢູ່ບ່ອນອື່ນ.",
+  "currentPassword": "ລະຫັດຜ່ານປະຈຸບັນ",
+  "newPassword": "ລະຫັດຜ່ານໃໝ່",
+  "confirmPassword": "ຢືນຢັນລະຫັດຜ່ານໃໝ່",
+  "placeholders": {
+    "currentPassword": "ໃສ່ລະຫັດຜ່ານປະຈຸບັນຂອງທ່ານ",
+    "newPassword": "ໃສ່ລະຫັດຜ່ານໃໝ່ຂອງທ່ານ",
+    "confirmPassword": "ຢືນຢັນລະຫັດຜ່ານໃໝ່ຂອງທ່ານ"
+  },
+  "passwordStrength": {
+    "title": "ຄວາມເຂັ້ມແຂງຂອງລະຫັດຜ່ານ",
+    "weak": "ອ່ອນ",
+    "medium": "ກາງ",
+    "strong": "ເຂັ້ມແຂງ"
+  },
+  "passwordRequirements": "ຂໍ້ກຳນົດລະຫັດຜ່ານ",
+  "requirements": {
+    "length": "ຢ່າງໜ້ອຍ 8 ຕົວອັກສອນ",
+    "uppercase": "ຕົວອັກສອນໃຫຍ່ຢ່າງໜ້ອຍ 1 ຕົວ",
+    "lowercase": "ຕົວອັກສອນນ້ອຍຢ່າງໜ້ອຍ 1 ຕົວ",
+    "number": "ຕົວເລກຢ່າງໜ້ອຍ 1 ຕົວ",
+    "special": "ຕົວອັກສອນພິເສດຢ່າງໜ້ອຍ 1 ຕົວ"
+  },
+  "securityTips": {
+    "title": "ຄຳແນະນຳດ້ານຄວາມປອດໄພ",
+    "uniquePassword": "ໃຊ້ລະຫັດຜ່ານທີ່ເປັນເອກະລັກທີ່ທ່ານບໍ່ໄດ້ໃຊ້ຢູ່ບ່ອນອື່ນ",
+    "passwordManager": "ພິຈາລະນາໃຊ້ຕົວຈັດການລະຫັດຜ່ານ",
+    "personalInfo": "ຫຼີກເວັ້ນການໃຊ້ຂໍ້ມູນສ່ວນຕົວໃນລະຫັດຜ່ານ"
+  },
+  "changePasswordButton": "ປ່ຽນລະຫັດຜ່ານ",
+  "changingPassword": "ກຳລັງປ່ຽນລະຫັດຜ່ານ...",
+  "validation": {
+    "missingInfo": "ຂໍ້ມູນບໍ່ຄົບຖ້ວນ",
+    "enterCurrentPassword": "ກະລຸນາໃສ່ລະຫັດຜ່ານປະຈຸບັນຂອງທ່ານ",
+    "enterNewPassword": "ກະລຸນາໃສ່ລະຫັດຜ່ານໃໝ່",
+    "weakPassword": "ລະຫັດຜ່ານອ່ອນເກີນໄປ",
+    "strongPasswordRequired": "ກະລຸນາເລືອກລະຫັດຜ່ານທີ່ເຂັ້ມແຂງທີ່ຕອບສະໜອງຂໍ້ກຳນົດທັງໝົດ",
+    "passwordMismatch": "ລະຫັດຜ່ານບໍ່ກົງກັນ",
+    "passwordsDontMatch": "ລະຫັດຜ່ານໃໝ່ແລະການຢືນຢັນບໍ່ກົງກັນ",
+    "samePassword": "ລະຫັດຜ່ານເກົ່າ",
+    "newPasswordDifferent": "ລະຫັດຜ່ານໃໝ່ຕ້ອງແຕກຕ່າງຈາກລະຫັດຜ່ານປະຈຸບັນຂອງທ່ານ"
+  },
+  "success": {
+    "title": "ສຳເລັດ!",
+    "passwordChanged": "ລະຫັດຜ່ານຂອງທ່ານຖືກປ່ຽນແລ້ວ"
+  },
+  "error": {
+    "changeFailed": "ການປ່ຽນລະຫັດຜ່ານລົ້ມເຫຼວ",
+    "checkCurrentPassword": "ບໍ່ສາມາດປ່ຽນລະຫັດຜ່ານໄດ້. ກະລຸນາກວດສອບລະຫັດຜ່ານປະຈຸບັນຂອງທ່ານ."
   }
+
 }

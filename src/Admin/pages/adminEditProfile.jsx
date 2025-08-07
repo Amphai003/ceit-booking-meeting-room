@@ -3,8 +3,11 @@ import { ArrowLeft, Loader, Save } from 'lucide-react';
 import Swal from 'sweetalert2';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api';
+import { useTranslation } from 'react-i18next'; // Import useTranslation
 
 const EditProfile = () => {
+  const { t, i18n } = useTranslation(); // Initialize useTranslation
+
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -50,8 +53,8 @@ const EditProfile = () => {
           navigate('/login');
         } else {
           Swal.fire({
-            title: 'Error',
-            text: 'Failed to load profile data for editing. Please try again.',
+            title: t('editProfilePage.errorTitle'),
+            text: t('editProfilePage.loadError'),
             icon: 'error',
             confirmButtonColor: '#3b82f6',
             customClass: { popup: 'rounded-2xl', confirmButton: 'rounded-xl font-medium px-6 py-3' }
@@ -63,7 +66,7 @@ const EditProfile = () => {
     };
 
     fetchUserData();
-  }, [navigate]);
+  }, [navigate, t]); // Add t to dependency array
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -84,8 +87,8 @@ const EditProfile = () => {
       });
 
       Swal.fire({
-        title: 'Success!',
-        text: 'Profile updated successfully.',
+        title: t('editProfilePage.successTitle'),
+        text: t('editProfilePage.updateSuccess'),
         icon: 'success',
         confirmButtonColor: '#3b82f6',
         customClass: { popup: 'rounded-2xl', confirmButton: 'rounded-xl font-medium px-6 py-3' }
@@ -94,8 +97,8 @@ const EditProfile = () => {
     } catch (error) {
       console.error('Error saving profile:', error);
       Swal.fire({
-        title: 'Save Failed',
-        text: error.response?.data?.message || 'Failed to update profile. Please try again.',
+        title: t('editProfilePage.saveFailedTitle'),
+        text: error.response?.data?.message || t('editProfilePage.updateFailed'),
         icon: 'error',
         confirmButtonColor: '#3b82f6',
         customClass: { popup: 'rounded-2xl', confirmButton: 'rounded-xl font-medium px-6 py-3' }
@@ -114,14 +117,14 @@ const EditProfile = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center p-6 bg-white rounded-xl shadow-md">
           <div className="w-10 h-10 border-4 border-gray-200 border-t-blue-500 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600 font-medium">Loading profile data...</p>
+          <p className={`text-gray-600 font-medium ${i18n.language === 'lo' ? 'font-lao' : ''}`}>{t('editProfilePage.loadingProfile')}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 font-sans antialiased">
+    <div className={`min-h-screen bg-gray-50 font-sans antialiased ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
       {/* Fixed Header with Back Button */}
       <div className="fixed top-0 left-0 right-0 bg-white text-gray-900 z-20 shadow-md">
         <div className="px-4 py-4 flex items-center max-w-2xl mx-auto">
@@ -132,7 +135,7 @@ const EditProfile = () => {
           >
             <ArrowLeft className="w-6 h-6 text-gray-700" />
           </button>
-          <h1 className="text-xl sm:text-2xl font-bold flex-grow text-center pr-10">Edit Profile</h1>
+          <h1 className={`text-xl sm:text-2xl font-bold flex-grow text-center pr-10 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>{t('editProfilePage.title')}</h1>
         </div>
       </div>
 
@@ -143,7 +146,7 @@ const EditProfile = () => {
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* First Name */}
               <div>
-                <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+                <label htmlFor="firstName" className={`block text-sm font-medium text-gray-700 mb-1 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>{t('editProfilePage.firstNameLabel')}</label>
                 <input
                   type="text"
                   id="firstName"
@@ -151,14 +154,14 @@ const EditProfile = () => {
                   value={formData.firstName}
                   onChange={handleChange}
                   className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-base transition-colors duration-200"
-                  placeholder="Enter your first name"
+                  placeholder={t('editProfilePage.firstNamePlaceholder')}
                   required
                 />
               </div>
 
               {/* Last Name */}
               <div>
-                <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+                <label htmlFor="lastName" className={`block text-sm font-medium text-gray-700 mb-1 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>{t('editProfilePage.lastNameLabel')}</label>
                 <input
                   type="text"
                   id="lastName"
@@ -166,14 +169,14 @@ const EditProfile = () => {
                   value={formData.lastName}
                   onChange={handleChange}
                   className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-base transition-colors duration-200"
-                  placeholder="Enter your last name"
+                  placeholder={t('editProfilePage.lastNamePlaceholder')}
                   required
                 />
               </div>
 
               {/* Email (Read-only) */}
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                <label htmlFor="email" className={`block text-sm font-medium text-gray-700 mb-1 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>{t('editProfilePage.emailLabel')}</label>
                 <input
                   type="email"
                   id="email"
@@ -186,7 +189,7 @@ const EditProfile = () => {
 
               {/* Phone Number */}
               <div>
-                <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                <label htmlFor="phoneNumber" className={`block text-sm font-medium text-gray-700 mb-1 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>{t('editProfilePage.phoneNumberLabel')}</label>
                 <input
                   type="tel"
                   id="phoneNumber"
@@ -194,13 +197,13 @@ const EditProfile = () => {
                   value={formData.phoneNumber}
                   onChange={handleChange}
                   className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-base transition-colors duration-200"
-                  placeholder="Enter your phone number"
+                  placeholder={t('editProfilePage.phoneNumberPlaceholder')}
                 />
               </div>
 
               {/* Department */}
               <div>
-                <label htmlFor="department" className="block text-sm font-medium text-gray-700 mb-1">Department</label>
+                <label htmlFor="department" className={`block text-sm font-medium text-gray-700 mb-1 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>{t('editProfilePage.departmentLabel')}</label>
                 <input
                   type="text"
                   id="department"
@@ -208,7 +211,7 @@ const EditProfile = () => {
                   value={formData.department}
                   onChange={handleChange}
                   className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-base transition-colors duration-200"
-                  placeholder="Enter your department"
+                  placeholder={t('editProfilePage.departmentPlaceholder')}
                 />
               </div>
 
@@ -224,7 +227,7 @@ const EditProfile = () => {
                   ) : (
                     <Save className="w-6 h-6" />
                   )}
-                  <span>{isSaving ? 'Saving...' : 'Save Changes'}</span>
+                  <span className={`${i18n.language === 'lo' ? 'font-lao' : ''}`}>{isSaving ? t('editProfilePage.saving') : t('editProfilePage.saveChanges')}</span>
                 </button>
               </div>
             </form>

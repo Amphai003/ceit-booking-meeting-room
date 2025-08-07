@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { X, Calendar as CalendarIcon } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import api from '../../api';
 import Swal from 'sweetalert2'; // Import SweetAlert2
 
 const RoomCalendarModal = ({ room, initialSelectedDate, onClose, onTimeSelect }) => {
+  const { t, i18n } = useTranslation();
   const [selectedDate, setSelectedDate] = useState(initialSelectedDate || new Date());
   const [dailyBookings, setDailyBookings] = useState([]);
   const [isLoadingCalendar, setIsLoadingCalendar] = useState(true);
@@ -33,18 +35,18 @@ const RoomCalendarModal = ({ room, initialSelectedDate, onClose, onTimeSelect })
         const formattedDate = getFormattedDate(selectedDate);
         console.log('Fetching bookings for date:', formattedDate);
         console.log('Room ID:', room._id);
-        
+
         const response = await api.get(`/bookings?roomId=${room._id}&bookingDate=${formattedDate}`);
         console.log('Full API Response:', response);
         console.log('Response data:', response.data);
         console.log('Response data keys:', Object.keys(response.data));
-        
+
         // Fix the data path - based on your JSON structure, it should be response.data.data
         let bookingsData = [];
         if (response.data && response.data.data) {
           console.log('Found response.data.data:', response.data.data);
           console.log('Is response.data.data an array?', Array.isArray(response.data.data));
-          
+
           if (Array.isArray(response.data.data.data)) {
             // If the structure is response.data.data.data
             bookingsData = response.data.data.data;
@@ -56,11 +58,11 @@ const RoomCalendarModal = ({ room, initialSelectedDate, onClose, onTimeSelect })
           }
         }
         console.log('Final processed bookings:', bookingsData);
-        
+
         setDailyBookings(bookingsData);
       } catch (err) {
         console.error('Failed to fetch daily bookings:', err);
-        setCalendarError('Failed to load bookings for this date.');
+        setCalendarError(t('calendar.fetchError'));
         setDailyBookings([]);
       } finally {
         setIsLoadingCalendar(false);
@@ -68,7 +70,7 @@ const RoomCalendarModal = ({ room, initialSelectedDate, onClose, onTimeSelect })
     };
 
     fetchDailyBookings();
-  }, [room, selectedDate]);
+  }, [room, selectedDate, t]);
 
   const generateTimeSlots = () => {
     const slots = [];
@@ -88,7 +90,7 @@ const RoomCalendarModal = ({ room, initialSelectedDate, onClose, onTimeSelect })
     // Debug logging
     console.log('Checking slot:', slotStartTime);
     console.log('Daily bookings:', dailyBookings);
-    
+
     if (!Array.isArray(dailyBookings) || dailyBookings.length === 0) {
       console.log('No bookings found or not array');
       return { status: null, bookingInfo: null };
@@ -97,7 +99,7 @@ const RoomCalendarModal = ({ room, initialSelectedDate, onClose, onTimeSelect })
     // Convert slot time to minutes for easier comparison
     const slotStartMinutes = timeToMinutes(slotStartTime);
     const slotEndMinutes = slotStartMinutes + 60; // Each slot is 1 hour
-    
+
     console.log(`Slot ${slotStartTime}: ${slotStartMinutes} - ${slotEndMinutes} minutes`);
 
     for (const booking of dailyBookings) {
@@ -106,11 +108,11 @@ const RoomCalendarModal = ({ room, initialSelectedDate, onClose, onTimeSelect })
         endTime: booking.endTime,
         status: booking.status
       });
-      
+
       // Convert booking times to minutes
       const bookingStartMinutes = timeToMinutes(booking.startTime);
       const bookingEndMinutes = timeToMinutes(booking.endTime);
-      
+
       console.log(`Booking: ${bookingStartMinutes} - ${bookingEndMinutes} minutes`);
 
       // Check for overlap: booking overlaps with slot if:
@@ -119,7 +121,7 @@ const RoomCalendarModal = ({ room, initialSelectedDate, onClose, onTimeSelect })
       const standardOverlap = bookingStartMinutes < slotEndMinutes && bookingEndMinutes > slotStartMinutes;
       const endTimeOverlap = bookingEndMinutes === slotStartMinutes;
       const hasOverlap = standardOverlap || endTimeOverlap;
-      
+
       console.log('Overlap check:', hasOverlap);
 
       if (hasOverlap) {
@@ -157,22 +159,22 @@ const RoomCalendarModal = ({ room, initialSelectedDate, onClose, onTimeSelect })
 
     if (bookingStatus) { // Slot is booked (pending, approved, etc.)
       Swal.fire({
-        title: 'Room Occupied',
+        title: t('calendar.roomOccupied'),
         html: `
-          <p>This time slot is booked by <strong>${bookingInfo.userName}</strong>.</p>
-          <p><strong>Purpose:</strong> ${bookingInfo.purpose}</p>
-          <p><strong>Time:</strong> ${bookingInfo.time}</p>
-          <p><strong>Status:</strong> <span style="font-weight: bold; color: ${bookingInfo.status === 'pending' ? '#eab308' : bookingInfo.status === 'approved' ? '#3b82f6' : '#ef4444'}">${bookingInfo.status.toUpperCase()}</span></p>
+          <p>${t('calendar.bookedBy')} <strong>${bookingInfo.userName}</strong>.</p>
+          <p><strong>${t('calendar.purpose')}:</strong> ${bookingInfo.purpose}</p>
+          <p><strong>${t('calendar.time')}:</strong> ${bookingInfo.time}</p>
+          <p><strong>${t('calendar.status')}:</strong> <span style="font-weight: bold; color: ${bookingInfo.status === 'pending' ? '#eab308' : bookingInfo.status === 'approved' ? '#3b82f6' : '#ef4444'}">${t(`calendar.status_${bookingInfo.status}`)}</span></p>
         `,
         icon: bookingInfo.status === 'pending' ? 'info' : 'warning',
-        confirmButtonText: 'Got It',
+        confirmButtonText: t('calendar.gotIt'),
       });
     } else if (selectedDateTime <= now) { // Slot is NOT booked, but it's in the past or current minute
       Swal.fire({
-        title: 'Time Slot Unavailable',
-        text: 'This time slot is in the past or too close to the current time to be booked.',
+        title: t('calendar.slotUnavailable'),
+        text: t('calendar.pastTimeMessage'),
         icon: 'info',
-        confirmButtonText: 'Got It',
+        confirmButtonText: t('calendar.gotIt'),
       });
     } else { // Slot is available and in the future
       onTimeSelect(slot);
@@ -185,12 +187,14 @@ const RoomCalendarModal = ({ room, initialSelectedDate, onClose, onTimeSelect })
         <button onClick={onClose} className="absolute top-3 right-3 text-gray-500 hover:text-gray-700">
           <X className="w-6 h-6" />
         </button>
-        <h2 className="text-xl font-bold mb-4">
-          Availability for {room.name}
+        <h2 className={`text-xl font-bold mb-4 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
+          {t('calendar.availabilityFor')} {room.name}
         </h2>
 
         <div className="mb-4 flex items-center space-x-2">
-          <label className="block text-sm font-medium text-gray-700">Select Date:</label>
+          <label className={`block text-sm font-medium text-gray-700 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
+            {t('calendar.selectDate')}:
+          </label>
           <div className="relative">
             <DatePicker
               selected={selectedDate}
@@ -205,10 +209,14 @@ const RoomCalendarModal = ({ room, initialSelectedDate, onClose, onTimeSelect })
         {isLoadingCalendar ? (
           <div className="text-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black mx-auto mb-2"></div>
-            <p className="text-gray-600">Loading calendar...</p>
+            <p className={`text-gray-600 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
+              {t('calendar.loadingCalendar')}
+            </p>
           </div>
         ) : calendarError ? (
-          <p className="text-red-500 text-center py-8">{calendarError}</p>
+          <p className={`text-red-500 text-center py-8 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
+            {calendarError}
+          </p>
         ) : (
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 max-h-80 overflow-y-auto pr-2">
             {timeSlots.map((slot, index) => {
@@ -222,7 +230,7 @@ const RoomCalendarModal = ({ room, initialSelectedDate, onClose, onTimeSelect })
                 parseInt(slot.split(':')[1])
               );
 
-              let buttonClasses = 'p-2 rounded-md text-sm font-medium transition-colors';
+              let buttonClasses = `p-2 rounded-md text-sm font-medium transition-colors ${i18n.language === 'lo' ? 'font-lao' : ''}`;
               let isDisabled = false;
 
               // Logic for coloring and disabling:
@@ -234,8 +242,8 @@ const RoomCalendarModal = ({ room, initialSelectedDate, onClose, onTimeSelect })
                 buttonClasses += ' bg-yellow-500 text-white cursor-not-allowed';
                 isDisabled = true;
               } else if (['rejected', 'cancelled', 'history'].includes(bookingStatus)) {
-                  // These are usually 'unavailable' or 'history'. You might want to make 'rejected'/'cancelled' available.
-                  // For now, sticking to 'Occupied/Unavailable' for these too, as per your legend.
+                // These are usually 'unavailable' or 'history'. You might want to make 'rejected'/'cancelled' available.
+                // For now, sticking to 'Occupied/Unavailable' for these too, as per your legend.
                 buttonClasses += ' bg-red-500 text-white cursor-not-allowed';
                 isDisabled = true;
               }
@@ -263,11 +271,11 @@ const RoomCalendarModal = ({ room, initialSelectedDate, onClose, onTimeSelect })
             })}
           </div>
         )}
-        <div className="text-xs text-gray-500 mt-4 flex flex-wrap gap-x-4 gap-y-2">
-          <p><span className="inline-block w-3 h-3 bg-green-100 rounded-sm mr-1"></span> Available</p>
-          <p><span className="inline-block w-3 h-3 bg-blue-500 rounded-sm mr-1"></span> Approved</p>
-          <p><span className="inline-block w-3 h-3 bg-yellow-500 rounded-sm mr-1"></span> Pending</p>
-          <p><span className="inline-block w-3 h-3 bg-red-500 rounded-sm mr-1"></span> Occupied/Unavailable</p>
+        <div className={`text-xs text-gray-500 mt-4 flex flex-wrap gap-x-4 gap-y-2 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
+          <p><span className="inline-block w-3 h-3 bg-green-100 rounded-sm mr-1"></span> {t('calendar.legend.available')}</p>
+          <p><span className="inline-block w-3 h-3 bg-blue-500 rounded-sm mr-1"></span> {t('calendar.legend.approved')}</p>
+          <p><span className="inline-block w-3 h-3 bg-yellow-500 rounded-sm mr-1"></span> {t('calendar.legend.pending')}</p>
+          <p><span className="inline-block w-3 h-3 bg-red-500 rounded-sm mr-1"></span> {t('calendar.legend.occupiedUnavailable')}</p>
         </div>
       </div>
     </div>

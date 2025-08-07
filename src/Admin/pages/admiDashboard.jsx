@@ -210,7 +210,7 @@ const MeetingRoomDashboard = () => {
       case 'bookings':
         return <PlaceholderContent title="Bookings Management" message="Booking management features coming soon..." />;
       case 'users':
-        return <PlaceholderContent title="User Management" message="User management features coming soon..." />;
+        // return <PlaceholderContent title="User Management" message="User management features coming soon..." />;
       case 'settings':
         return <SettingsPanel />;
       default:

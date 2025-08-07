@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Calendar, Clock, MapPin, CreditCard, User, Mail, Phone, Building, Loader2, ClipboardList } from 'lucide-react'; // Added ClipboardList for equipment
+import { X, Calendar, Clock, MapPin, CreditCard, User, Mail, Phone, Building, Loader2, ClipboardList } from 'lucide-react';
 import api from '../../api';
 import { useTranslation } from 'react-i18next';
 
@@ -21,31 +21,21 @@ const UserDetailsModal = ({ user, onClose }) => {
         setLoading(true);
         setError(null);
 
-        // Fetch bookings for the specific user.
-        // It's highly recommended to have an API endpoint that fetches bookings for a given userId
-        // e.g., `/bookings?userId=${user._id}` for better efficiency.
-        // If your backend supports this, change the API call below.
-        // For now, we'll fetch all and filter client-side as per the initial approach.
-        const response = await api.get('/bookings?limit=1000'); // Increase limit or implement pagination if many bookings
-
-        // Filter bookings for this specific user
+        const response = await api.get('/bookings?limit=1000');
         const userBookings = response.data.data.filter(booking =>
           booking.userId && booking.userId._id === user._id
         );
 
         setBookings(userBookings);
 
-        // Calculate stats
         const now = new Date();
         const statsData = {
           totalBookings: userBookings.length,
           upcomingBookings: userBookings.filter(b => {
-            // Combine bookingDate and startTime to create a full Date object
             const startDate = new Date(`${b.bookingDate.split('T')[0]}T${b.startTime}`);
             return startDate > now && b.status === 'confirmed';
           }).length,
           completedBookings: userBookings.filter(b => {
-            // Combine bookingDate and endTime to create a full Date object
             const endDate = new Date(`${b.bookingDate.split('T')[0]}T${b.endTime}`);
             return endDate < now && b.status === 'confirmed';
           }).length,
@@ -61,15 +51,14 @@ const UserDetailsModal = ({ user, onClose }) => {
       }
     };
 
-    if (user && user._id) { // Ensure user and user._id are available before fetching
+    if (user && user._id) {
       fetchUserBookings();
     }
-  }, [user, t]); // Depend on user and t for translation changes
+  }, [user, t]);
 
   const formatDateTime = (dateString, timeString) => {
     if (!dateString || !timeString) return t('userDetails.invalidDateTime');
     try {
-      // Combine date part (YYYY-MM-DD) and time (HH:MM) to create a valid ISO 8601 string
       const dateTime = new Date(`${dateString.split('T')[0]}T${timeString}`);
       return dateTime.toLocaleDateString(i18n.language === 'lo' ? 'lo-LA' : 'en-US', {
         year: 'numeric',
@@ -87,7 +76,6 @@ const UserDetailsModal = ({ user, onClose }) => {
   const formatTimeOnly = (timeString) => {
     if (!timeString) return '';
     try {
-      // Create a dummy date to parse the time correctly
       const dummyDate = new Date(`2000-01-01T${timeString}`);
       return dummyDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     } catch (e) {
@@ -95,7 +83,6 @@ const UserDetailsModal = ({ user, onClose }) => {
       return '';
     }
   };
-
 
   const getStatusBadge = (status) => {
     const baseClasses = "px-2 py-1 text-xs font-medium rounded-full";
@@ -106,7 +93,7 @@ const UserDetailsModal = ({ user, onClose }) => {
         return `${baseClasses} bg-red-100 text-red-800`;
       case 'pending':
         return `${baseClasses} bg-yellow-100 text-yellow-800`;
-      case 'rejected': // Assuming a rejected status might exist
+      case 'rejected':
         return `${baseClasses} bg-gray-200 text-gray-700`;
       default:
         return `${baseClasses} bg-gray-100 text-gray-800`;
@@ -157,7 +144,7 @@ const UserDetailsModal = ({ user, onClose }) => {
                     {user.firstName} {user.lastName}
                   </h3>
                   <p className={`text-sm text-gray-600 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
-                    {user.role}
+                    {t(`roles.${user.role}`)}
                   </p>
                 </div>
               </div>
@@ -258,7 +245,7 @@ const UserDetailsModal = ({ user, onClose }) => {
                         {booking.roomId?.name || t('userDetails.unknownRoom')}
                       </h4>
                       <span className={`${getStatusBadge(booking.status)} ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
-                        {booking.status}
+                        {t(`bookingStatus.${booking.status}`)}
                       </span>
                     </div>
 
@@ -316,7 +303,6 @@ const UserDetailsModal = ({ user, onClose }) => {
                         )}
                       </div>
                     )}
-
                   </div>
                 ))}
               </div>

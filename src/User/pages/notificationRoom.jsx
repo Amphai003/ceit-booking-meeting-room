@@ -11,6 +11,38 @@ const NotificationsScreen = () => {
   const [error, setError] = useState(null);
   const [selectedFilter, setSelectedFilter] = useState('all');
 
+  // Fixed date parsing function
+  const parseNotificationDateTime = (message) => {
+    // Try multiple patterns to extract date and time
+    const patterns = [
+      // English pattern: "for Fri Aug 29 2025 07:00:00 GMT"
+      /for\s+([A-Za-z]{3}\s+[A-Za-z]{3}\s+\d{1,2}\s+\d{4})\s+(\d{2}:\d{2}:\d{2})\s+GMT/,
+      // Lao pattern: "ສຳລັບວັນທີ Fri Aug 29 2025 07:00:00 GMT"
+      /ສຳລັບວັນທີ\s+([A-Za-z]{3}\s+[A-Za-z]{3}\s+\d{1,2}\s+\d{4})\s+(\d{2}:\d{2}:\d{2})\s+GMT/,
+      // General pattern: any date followed by time and GMT
+      /([A-Za-z]{3}\s+[A-Za-z]{3}\s+\d{1,2}\s+\d{4})\s+(\d{2}:\d{2}:\d{2})\s+GMT/
+    ];
+
+    for (const pattern of patterns) {
+      const match = message.match(pattern);
+      if (match) {
+        return {
+          date: match[1],
+          time: match[2]
+        };
+      }
+    }
+
+    // Fallback: try to extract any date-like string
+    const dateMatch = message.match(/[A-Za-z]{3}\s+[A-Za-z]{3}\s+\d{1,2}\s+\d{4}/);
+    const timeMatch = message.match(/\d{2}:\d{2}:\d{2}/);
+    
+    return {
+      date: dateMatch ? dateMatch[0] : null,
+      time: timeMatch ? timeMatch[0] : null
+    };
+  };
+
   const fetchNotifications = async () => {
     setLoading(true);
     setError(null);
@@ -228,26 +260,37 @@ const NotificationsScreen = () => {
                             {notification.message}
                           </p>
 
-                          {/* Room Details (Assuming these fields exist in your API response) */}
+                          {/* Room Details - Fixed Date/Time Parsing */}
                           {notification.type === 'booking_status' && (
                             <div className="bg-white bg-opacity-50 rounded-lg p-3 mb-3">
                               <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
                                 <div>
                                   <span className={`font-medium text-gray-600 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>{t('notificationsScreen.dateLabel')}</span>
                                   <span className={`ml-2 text-gray-900 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
-                                    {notification.message.match(/for (.*?) GMT/)?.[1]?.split(' ')[0] + ' ' + notification.message.match(/for (.*?) GMT/)?.[1]?.split(' ')[1] + ' ' + notification.message.match(/for (.*?) GMT/)?.[1]?.split(' ')[2]}
+                                    {(() => {
+                                      const parsed = parseNotificationDateTime(notification.message);
+                                      return parsed.date || 'N/A';
+                                    })()}
                                   </span>
                                 </div>
                                 <div>
                                   <span className={`font-medium text-gray-600 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>{t('notificationsScreen.timeLabel')}</span>
                                   <span className={`ml-2 text-gray-900 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
-                                    {notification.message.match(/(\d{2}:\d{2}:\d{2}) GMT/)?.[1]}
+                                    {(() => {
+                                      const parsed = parseNotificationDateTime(notification.message);
+                                      return parsed.time || 'N/A';
+                                    })()}
                                   </span>
                                 </div>
                                 <div>
                                   <span className={`font-medium text-gray-600 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>{t('notificationsScreen.statusLabel')}</span>
                                   <span className={`ml-2 text-gray-900 ${i18n.language === 'lo' ? 'font-lao' : ''}`}>
-                                    {notification.title.includes("Approved") ? t('notificationsScreen.approved') : t('notificationsScreen.pending')}
+                                    {notification.title.includes("Approved") || notification.title.includes("ອະນຸມັດ") 
+                                      ? t('notificationsScreen.approved') 
+                                      : notification.title.includes("Rejected") || notification.title.includes("ປະຕິເສດ") 
+                                        ? t('notificationsScreen.rejected')
+                                        : t('notificationsScreen.pending')
+                                    }
                                   </span>
                                 </div>
                               </div>
